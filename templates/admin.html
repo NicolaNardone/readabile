@@ -1,0 +1,178 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <title>ReadAbile — Dashboard Admin</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Sora:wght@300;400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root { --bg: #0a0a14; --bg2: #11111f; --accent: #f0a500; --accent2: #ff6b6b;
+      --blue: #4a9eff; --green: #2ecc71; --text: #e8e8f0; --text-muted: #8888aa;
+      --border: rgba(255,255,255,0.08); }
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif;
+      min-height: 100vh; }
+    .container { max-width: 1000px; margin: 0 auto; padding: 40px 24px; }
+    header { display: flex; justify-content: space-between; align-items: center;
+      margin-bottom: 48px; padding-bottom: 20px;
+      border-bottom: 1px solid var(--border); }
+    .logo { font-family: 'Space Mono', monospace; font-size: 1.5rem; font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text; -webkit-text-fill-color: transparent; background-clip: text; }
+    .badge-admin { background: rgba(240,165,0,0.15); color: var(--accent);
+      border: 1px solid rgba(240,165,0,0.3); padding: 4px 12px; border-radius: 50px;
+      font-size: 0.75rem; font-family: 'Space Mono', monospace; }
+    .logout { color: var(--text-muted); font-size: 0.85rem; text-decoration: none; }
+    .logout:hover { color: var(--accent2); }
+    .section-title { font-family: 'Space Mono', monospace; font-size: 0.75rem;
+      letter-spacing: 3px; text-transform: uppercase; color: var(--accent);
+      margin-bottom: 16px; }
+    .card { background: var(--bg2); border: 1px solid var(--border);
+      border-radius: 20px; padding: 24px; margin-bottom: 32px; }
+    table { width: 100%; border-collapse: collapse; }
+    th { text-align: left; padding: 10px 14px; font-size: 0.75rem; letter-spacing: 1px;
+      text-transform: uppercase; color: var(--text-muted);
+      border-bottom: 1px solid var(--border); }
+    td { padding: 12px 14px; font-size: 0.9rem; border-bottom: 1px solid var(--border); }
+    tr:last-child td { border-bottom: none; }
+    .stato { padding: 3px 10px; border-radius: 50px; font-size: 0.75rem;
+      font-family: 'Space Mono', monospace; }
+    .stato.in_attesa { background: rgba(240,165,0,0.15); color: var(--accent); }
+    .stato.approvato { background: rgba(46,204,113,0.15); color: var(--green); }
+    .stato.bloccato { background: rgba(255,107,107,0.15); color: var(--accent2); }
+    .btn-sm { padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; cursor: pointer;
+      border: none; font-family: 'Space Mono', monospace; text-decoration: none;
+      display: inline-block; transition: opacity 0.2s; }
+    .btn-sm:hover { opacity: 0.8; }
+    .btn-approva { background: rgba(46,204,113,0.2); color: var(--green); }
+    .btn-blocca { background: rgba(255,107,107,0.2); color: var(--accent2); }
+    .btn-primary { background: linear-gradient(135deg, var(--accent), #e09000);
+      color: #000; padding: 10px 24px; border-radius: 10px; border: none;
+      font-family: 'Space Mono', monospace; font-weight: 700; font-size: 0.85rem;
+      cursor: pointer; letter-spacing: 1px; text-transform: uppercase; transition: all 0.3s; }
+    .btn-primary:hover { transform: translateY(-1px); }
+    .codice { font-family: 'Space Mono', monospace; font-size: 1rem;
+      color: var(--accent); letter-spacing: 2px; }
+    .usato { color: var(--text-muted); text-decoration: line-through; }
+    .stats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-bottom: 32px; }
+    .stat { background: var(--bg2); border: 1px solid var(--border); border-radius: 16px;
+      padding: 20px; text-align: center; }
+    .stat-num { font-family: 'Space Mono', monospace; font-size: 2rem; font-weight: 700;
+      color: var(--accent); }
+    .stat-label { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
+    .empty { color: var(--text-muted); font-size: 0.9rem; text-align: center;
+      padding: 20px; font-style: italic; }
+  </style>
+</head>
+<body>
+<div class="container">
+
+  <header>
+    <div>
+      <div class="logo">ReadAbile</div>
+      <div class="badge-admin">Pannello Admin</div>
+    </div>
+    <a href="/admin/logout" class="logout">Esci →</a>
+  </header>
+
+  <!-- STATISTICHE -->
+  <div class="stats">
+    <div class="stat">
+      <div class="stat-num">{{ utenti|length }}</div>
+      <div class="stat-label">Utenti totali</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">{{ in_attesa|length }}</div>
+      <div class="stat-label">In attesa</div>
+    </div>
+    <div class="stat">
+      <div class="stat-num">{{ codici|selectattr('usato', 'equalto', False)|list|length }}</div>
+      <div class="stat-label">Codici disponibili</div>
+    </div>
+  </div>
+
+  <!-- UTENTI IN ATTESA -->
+  {% if in_attesa %}
+  <div class="card">
+    <div class="section-title">⏳ Utenti in attesa di approvazione</div>
+    <table>
+      <tr><th>Nome</th><th>Email</th><th>Data</th><th>Azioni</th></tr>
+      {% for u in in_attesa %}
+      <tr>
+        <td>{{ u.nome }}</td>
+        <td>{{ u.email }}</td>
+        <td>{{ u.data_registrazione.strftime('%d/%m/%Y %H:%M') }}</td>
+        <td>
+          <a href="/admin/approva/{{ u.id }}" class="btn-sm btn-approva">✓ Approva</a>
+          <a href="/admin/blocca/{{ u.id }}" class="btn-sm btn-blocca">✗ Rifiuta</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif %}
+
+  <!-- TUTTI GLI UTENTI -->
+  <div class="card">
+    <div class="section-title">👥 Tutti gli utenti</div>
+    {% if utenti %}
+    <table>
+      <tr><th>Nome</th><th>Email</th><th>Stato</th><th>Data</th><th>Azioni</th></tr>
+      {% for u in utenti %}
+      <tr>
+        <td>{{ u.nome }}</td>
+        <td>{{ u.email }}</td>
+        <td><span class="stato {{ u.stato }}">{{ u.stato }}</span></td>
+        <td>{{ u.data_registrazione.strftime('%d/%m/%Y') }}</td>
+        <td>
+          {% if u.stato != 'approvato' %}
+          <a href="/admin/approva/{{ u.id }}" class="btn-sm btn-approva">✓</a>
+          {% endif %}
+          {% if u.stato != 'bloccato' %}
+          <a href="/admin/blocca/{{ u.id }}" class="btn-sm btn-blocca">✗</a>
+          {% endif %}
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <div class="empty">Nessun utente registrato ancora.</div>
+    {% endif %}
+  </div>
+
+  <!-- CODICI INVITO -->
+  <div class="card">
+    <div class="section-title">🔑 Codici invito</div>
+    <form action="/admin/crea-codice" method="POST" style="margin-bottom: 20px;">
+      <button type="submit" class="btn-primary">+ Genera nuovo codice</button>
+    </form>
+    {% if codici %}
+    <table>
+      <tr><th>Codice</th><th>Stato</th><th>Data creazione</th></tr>
+      {% for c in codici %}
+      <tr>
+        <td>
+          {% if c.usato %}
+          <span class="codice usato">{{ c.codice }}</span>
+          {% else %}
+          <span class="codice">{{ c.codice }}</span>
+          {% endif %}
+        </td>
+        <td>
+          {% if c.usato %}
+          <span class="stato bloccato">Usato</span>
+          {% else %}
+          <span class="stato approvato">Disponibile</span>
+          {% endif %}
+        </td>
+        <td>{{ c.data_creazione.strftime('%d/%m/%Y %H:%M') }}</td>
+      </tr>
+      {% endfor %}
+    </table>
+    {% else %}
+    <div class="empty">Nessun codice generato ancora.</div>
+    {% endif %}
+  </div>
+
+</div>
+</body>
+</html>

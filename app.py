@@ -1,79 +1,143 @@
 # ============================================================
 # ReadAbile - Server Web (Flask)
-# Gestisce l'interfaccia grafica dell'applicazione
-# Protetto da password per evitare accessi non autorizzati
+# Gestisce autenticazione, registrazione, pannello admin
+# e le funzionalità principali dell'app
 # ============================================================
 
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 import os
+from dotenv import load_dotenv
 from ocr import leggi_testo
 from tts import testo_in_audio
 from mappa import genera_mappa
+from database import (
+    init_db, registra_utente, login_utente, verifica_token,
+    verifica_codice_invito, segna_codice_usato,
+    get_utenti_in_attesa, get_tutti_utenti,
+    approva_utente, blocca_utente,
+    crea_codice_invito, get_codici
+)
+
+load_dotenv("credenziali.env")
 
 app = Flask(__name__)
+app.secret_key = os.environ.get("SECRET_KEY", "readabile2026")
 
-# Chiave segreta per gestire le sessioni utente
-app.secret_key = "readabile2026"
+# Password pannello amministratore
+ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin2026")
 
-# Password di accesso all'applicazione
-PASSWORD = "maker2026"
-
-# Cartella dove salviamo le immagini caricate dall'utente
-UPLOAD_FOLDER = "uploads"
-os.makedirs(UPLOAD_FOLDER, exist_ok=True)
-
-# Cartella per i file statici (audio, mappa)
+# Cartelle necessarie
+os.makedirs("uploads", exist_ok=True)
 os.makedirs("static", exist_ok=True)
+
+# Inizializzo il database all'avvio
+init_db()
+
+
+# ─── HELPERS ─────────────────────────────────────────────
+
+def utente_autenticato():
+    """
+    Controlla se l'utente è autenticato E se il suo token
+    di sessione è ancora valido nel database.
+    Se il token non corrisponde (account usato su altro dispositivo)
+    disconnette automaticamente.
+    """
+    if "user_id" not in session or "token" not in session:
+        return False
+    if not verifica_token(session["user_id"], session["token"]):
+        session.clear()
+        return False
+    return True
+
+
+def admin_autenticato():
+    """Controlla se l'amministratore è autenticato."""
+    return session.get("admin") == True
+
+
+# ─── ROTTE UTENTE ────────────────────────────────────────
+
+@app.route("/")
+def index():
+    """Pagina principale — richiede autenticazione."""
+    if not utente_autenticato():
+        return redirect(url_for("login"))
+    return render_template("index.html", nome=session.get("nome"))
 
 
 @app.route("/login", methods=["GET", "POST"])
 def login():
-    """
-    Pagina di login.
-    GET = mostra il form di accesso
-    POST = verifica la password inserita
-    """
+    """Pagina di login utente."""
     if request.method == "POST":
-        if request.form.get("password") == PASSWORD:
-            session["autenticato"] = True
-            return redirect(url_for("index"))
-        return render_template("login.html", errore=True)
-    return render_template("login.html", errore=False)
+        email    = request.form.get("email")
+        password = request.form.get("password")
+
+        utente, errore = login_utente(email, password)
+
+        if errore:
+            return render_template("login.html", errore=errore)
+
+        # Salvo i dati dell'utente nella sessione
+        session["user_id"] = utente["id"]
+        session["nome"]    = utente["nome"]
+        session["token"]   = utente["token_sessione"]
+
+        return redirect(url_for("index"))
+
+    return render_template("login.html", errore=None)
+
+
+@app.route("/registrati", methods=["GET", "POST"])
+def registrati():
+    """Pagina di registrazione con codice invito."""
+    if request.method == "POST":
+        nome           = request.form.get("nome")
+        email          = request.form.get("email")
+        password       = request.form.get("password")
+        codice_invito  = request.form.get("codice_invito").strip().upper()
+
+        # Verifico il codice invito
+        if not verifica_codice_invito(codice_invito):
+            return render_template("registrati.html", errore="Codice invito non valido o già utilizzato")
+
+        # Registro l'utente
+        successo = registra_utente(nome, email, password, codice_invito)
+
+        if not successo:
+            return render_template("registrati.html", errore="Email già registrata")
+
+        # Segno il codice come usato
+        segna_codice_usato(codice_invito)
+
+        return render_template("registrati.html", successo=True)
+
+    return render_template("registrati.html", errore=None)
 
 
 @app.route("/logout")
 def logout():
-    """Cancella la sessione e reindirizza al login."""
+    """Disconnette l'utente."""
     session.clear()
     return redirect(url_for("login"))
 
 
-@app.route("/")
-def index():
-    """
-    Pagina principale dell'app.
-    Se l'utente non e' autenticato, lo mando al login.
-    """
-    if not session.get("autenticato"):
-        return redirect(url_for("login"))
-    return render_template("index.html")
-
+# ─── ROTTA ELABORAZIONE ──────────────────────────────────
 
 @app.route("/elabora", methods=["POST"])
 def elabora():
     """
-    Riceve l'immagine caricata dall'utente,
-    esegue OCR, TTS e genera la mappa.
-    Restituisce i risultati in formato JSON.
+    Riceve l'immagine, esegue OCR + TTS + Mappa.
+    Richiede autenticazione e verifica il token di sessione.
     """
-    if not session.get("autenticato"):
+    if not utente_autenticato():
         return jsonify({"errore": "Non autorizzato"}), 401
 
     if "immagine" not in request.files:
         return jsonify({"errore": "Nessuna immagine caricata"}), 400
 
-    file = request.files["immagine"]
-    percorso = os.path.join(UPLOAD_FOLDER, file.filename)
+    file     = request.files["immagine"]
+    percorso = os.path.join("uploads", file.filename)
     file.save(percorso)
 
     testo = leggi_testo(percorso)
@@ -89,6 +153,76 @@ def elabora():
         "mappa": "/static/mappa.html"
     })
 
+
+# ─── ROTTE ADMIN ─────────────────────────────────────────
+
+@app.route("/admin/login", methods=["GET", "POST"])
+def admin_login():
+    """Login pannello amministratore."""
+    if request.method == "POST":
+        if request.form.get("password") == ADMIN_PASSWORD:
+            session["admin"] = True
+            return redirect(url_for("admin_dashboard"))
+        return render_template("admin_login.html", errore=True)
+    return render_template("admin_login.html", errore=False)
+
+
+@app.route("/admin")
+def admin_dashboard():
+    """Pannello di controllo admin — utenti e codici invito."""
+    if not admin_autenticato():
+        return redirect(url_for("admin_login"))
+
+    utenti        = get_tutti_utenti()
+    in_attesa     = get_utenti_in_attesa()
+    codici        = get_codici()
+
+    return render_template("admin.html",
+        utenti=utenti,
+        in_attesa=in_attesa,
+        codici=codici
+    )
+
+
+@app.route("/admin/approva/<int:user_id>")
+def admin_approva(user_id):
+    """Approva un utente in attesa."""
+    if not admin_autenticato():
+        return redirect(url_for("admin_login"))
+    approva_utente(user_id)
+    return redirect(url_for("admin_dashboard"))
+
+
+@app.route("/admin/blocca/<int:user_id>")
+def admin_blocca(user_id):
+    """Blocca un utente."""
+    if not admin_autenticato():
+        return redirect(url_for("admin_login"))
+    blocca_utente(user_id)
+    return redirect(url_for("admin_dashboard"))
+
+
+@app.route("/admin/crea-codice", methods=["POST"])
+def admin_crea_codice():
+    """Genera un nuovo codice invito."""
+    if not admin_autenticato():
+        return redirect(url_for("admin_login"))
+
+    import secrets
+    # Genero un codice di 8 caratteri maiuscoli
+    codice = secrets.token_hex(4).upper()
+    crea_codice_invito(codice)
+    return redirect(url_for("admin_dashboard"))
+
+
+@app.route("/admin/logout")
+def admin_logout():
+    """Disconnette l'amministratore."""
+    session.pop("admin", None)
+    return redirect(url_for("admin_login"))
+
+
+# ─── AVVIO ───────────────────────────────────────────────
 
 if __name__ == "__main__":
     port = int(os.environ.get("PORT", 5000))
