@@ -1,0 +1,8 @@
+flask
+requests
+python-dotenv
+gtts
+groq
+pyvis
+spacy
+https://github.com/explosion/spacy-models/releases/download/it_core_news_sm-3.7.0/it_core_news_sm-3.7.0.tar.gz

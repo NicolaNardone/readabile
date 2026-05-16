@@ -1,0 +1,13 @@
+credenziali.env
+credenziali.json
+venv/
+__pycache__/
+uploads/
+static/
+mappa.html
+output.mp3
+*.pyc
+lib/
+*.jpeg
+*.jpg
+*.png
