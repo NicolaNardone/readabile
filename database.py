@@ -11,6 +11,14 @@ from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
 from dotenv import load_dotenv
 
+
+def get_conn():
+    """Apre e restituisce una connessione al database."""
+    url = os.environ.get("DATABASE_URL", "NON_TROVATA")
+    print(f"DATABASE_URL: {url[:30]}...")  # stampo solo i primi 30 caratteri
+    return psycopg2.connect(url)
+
+
 load_dotenv("credenziali.env")
 
 # URL di connessione al database PostgreSQL
