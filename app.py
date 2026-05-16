@@ -16,7 +16,7 @@ from database import (
     verifica_codice_invito, segna_codice_usato,
     get_utenti_in_attesa, get_tutti_utenti,
     approva_utente, blocca_utente,
-    crea_codice_invito, get_codici
+    crea_codice_invito, get_codici, get_conn
 )
 
 load_dotenv("credenziali.env")
