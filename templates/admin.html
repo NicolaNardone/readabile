@@ -11,7 +11,7 @@
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif;
       min-height: 100vh; }
-    .container { max-width: 1000px; margin: 0 auto; padding: 40px 24px; }
+    .container { max-width: 1100px; margin: 0 auto; padding: 40px 24px; }
     header { display: flex; justify-content: space-between; align-items: center;
       margin-bottom: 48px; padding-bottom: 20px;
       border-bottom: 1px solid var(--border); }
@@ -32,7 +32,8 @@
     th { text-align: left; padding: 10px 14px; font-size: 0.75rem; letter-spacing: 1px;
       text-transform: uppercase; color: var(--text-muted);
       border-bottom: 1px solid var(--border); }
-    td { padding: 12px 14px; font-size: 0.9rem; border-bottom: 1px solid var(--border); }
+    td { padding: 12px 14px; font-size: 0.9rem; border-bottom: 1px solid var(--border);
+      vertical-align: middle; }
     tr:last-child td { border-bottom: none; }
     .stato { padding: 3px 10px; border-radius: 50px; font-size: 0.75rem;
       font-family: 'Space Mono', monospace; }
@@ -41,10 +42,12 @@
     .stato.bloccato { background: rgba(255,107,107,0.15); color: var(--accent2); }
     .btn-sm { padding: 5px 12px; border-radius: 8px; font-size: 0.8rem; cursor: pointer;
       border: none; font-family: 'Space Mono', monospace; text-decoration: none;
-      display: inline-block; transition: opacity 0.2s; }
+      display: inline-block; transition: opacity 0.2s; margin-right: 4px; }
     .btn-sm:hover { opacity: 0.8; }
     .btn-approva { background: rgba(46,204,113,0.2); color: var(--green); }
     .btn-blocca { background: rgba(255,107,107,0.2); color: var(--accent2); }
+    .btn-elimina { background: rgba(255,107,107,0.35); color: var(--accent2); }
+    .btn-reset { background: rgba(74,158,255,0.2); color: var(--blue); }
     .btn-primary { background: linear-gradient(135deg, var(--accent), #e09000);
       color: #000; padding: 10px 24px; border-radius: 10px; border: none;
       font-family: 'Space Mono', monospace; font-weight: 700; font-size: 0.85rem;
@@ -61,6 +64,12 @@
     .stat-label { font-size: 0.8rem; color: var(--text-muted); margin-top: 4px; }
     .empty { color: var(--text-muted); font-size: 0.9rem; text-align: center;
       padding: 20px; font-style: italic; }
+    .reset-form { display: inline-flex; gap: 6px; align-items: center; margin-top: 6px; }
+    .reset-input { background: rgba(255,255,255,0.05); border: 1px solid rgba(255,255,255,0.1);
+      border-radius: 6px; padding: 4px 10px; color: white; font-size: 0.8rem;
+      width: 140px; outline: none; font-family: 'Sora', sans-serif; }
+    .reset-input:focus { border-color: var(--blue); }
+    .azioni-col { min-width: 280px; }
   </style>
 </head>
 <body>
@@ -104,6 +113,8 @@
         <td>
           <a href="/admin/approva/{{ u.id }}" class="btn-sm btn-approva">✓ Approva</a>
           <a href="/admin/blocca/{{ u.id }}" class="btn-sm btn-blocca">✗ Rifiuta</a>
+          <a href="/admin/elimina/{{ u.id }}" class="btn-sm btn-elimina"
+             onclick="return confirm('Eliminare questo utente?')">🗑</a>
         </td>
       </tr>
       {% endfor %}
@@ -116,7 +127,13 @@
     <div class="section-title">👥 Tutti gli utenti</div>
     {% if utenti %}
     <table>
-      <tr><th>Nome</th><th>Email</th><th>Stato</th><th>Data</th><th>Azioni</th></tr>
+      <tr>
+        <th>Nome</th>
+        <th>Email</th>
+        <th>Stato</th>
+        <th>Data</th>
+        <th class="azioni-col">Azioni</th>
+      </tr>
       {% for u in utenti %}
       <tr>
         <td>{{ u.nome }}</td>
@@ -124,12 +141,24 @@
         <td><span class="stato {{ u.stato }}">{{ u.stato }}</span></td>
         <td>{{ u.data_registrazione.strftime('%d/%m/%Y') }}</td>
         <td>
+          <!-- Approva / Blocca -->
           {% if u.stato != 'approvato' %}
           <a href="/admin/approva/{{ u.id }}" class="btn-sm btn-approva">✓</a>
           {% endif %}
           {% if u.stato != 'bloccato' %}
           <a href="/admin/blocca/{{ u.id }}" class="btn-sm btn-blocca">✗</a>
           {% endif %}
+
+          <!-- Elimina -->
+          <a href="/admin/elimina/{{ u.id }}" class="btn-sm btn-elimina"
+             onclick="return confirm('Eliminare definitivamente {{ u.nome }}?')">🗑</a>
+
+          <!-- Reset password -->
+          <form action="/admin/reset-password/{{ u.id }}" method="POST" class="reset-form">
+            <input type="text" name="nuova_password" placeholder="Nuova password"
+                   class="reset-input" minlength="6" required/>
+            <button type="submit" class="btn-sm btn-reset">Reset pw</button>
+          </form>
         </td>
       </tr>
       {% endfor %}

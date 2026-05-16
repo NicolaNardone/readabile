@@ -7,6 +7,7 @@
 from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 import os
 from dotenv import load_dotenv
+from werkzeug.security import generate_password_hash
 from ocr import leggi_testo
 from tts import testo_in_audio
 from mappa import genera_mappa
@@ -35,6 +36,36 @@ os.makedirs("static", exist_ok=True)
 # Inizializzo il database all'avvio
 init_db()
 
+@app.route("/admin/elimina/<int:user_id>")
+def admin_elimina(user_id):
+    if not admin_autenticato():
+        return redirect(url_for("admin_login"))
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM utenti WHERE id = %s", (user_id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect(url_for("admin_dashboard"))
+
+
+@app.route("/admin/reset-password/<int:user_id>", methods=["POST"])
+def admin_reset_password(user_id):
+    if not admin_autenticato():
+        return redirect(url_for("admin_login"))
+    nuova_password = request.form.get("nuova_password")
+    if not nuova_password or len(nuova_password) < 6:
+        return redirect(url_for("admin_dashboard"))
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        "UPDATE utenti SET password_hash = %s WHERE id = %s",
+        (generate_password_hash(nuova_password), user_id)
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect(url_for("admin_dashboard"))
 
 # ─── HELPERS ─────────────────────────────────────────────
 
