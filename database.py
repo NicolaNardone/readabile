@@ -9,8 +9,8 @@ import psycopg2
 import psycopg2.extras
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
-from dotenv import load_dotenv
 
+DATABASE_URL = os.environ.get("DATABASE_URL", "")
 
 def get_conn():
     """Apre e restituisce una connessione al database."""
@@ -19,7 +19,7 @@ def get_conn():
     return psycopg2.connect(url)
 
 
-load_dotenv("credenziali.env")
+
 
 # URL di connessione al database PostgreSQL
 # Su Railway viene letta dalla variabile d'ambiente DATABASE_URL
