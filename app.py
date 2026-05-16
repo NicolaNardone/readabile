@@ -30,6 +30,11 @@ ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin2026")
 os.makedirs("uploads", exist_ok=True)
 os.makedirs("static", exist_ok=True)
 
+import os
+print("DATABASE_URL presente:", bool(os.environ.get("DATABASE_URL")))
+print("Tutte le variabili:", [k for k in os.environ.keys()])
+init_db()
+
 # Inizializzo il database all'avvio
 init_db()
 
