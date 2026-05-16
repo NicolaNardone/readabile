@@ -1,0 +1,140 @@
+<!DOCTYPE html>
+<html lang="it">
+<head>
+  <meta charset="UTF-8"/>
+  <title>ReadAbile — Accesso</title>
+  <link href="https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&family=Sora:wght@300;400;600&display=swap" rel="stylesheet"/>
+  <style>
+    :root {
+      --bg: #0a0a14;
+      --bg2: #11111f;
+      --accent: #f0a500;
+      --accent2: #ff6b6b;
+      --text: #e8e8f0;
+      --text-muted: #8888aa;
+      --border: rgba(255,255,255,0.08);
+    }
+
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+
+    body {
+      background: var(--bg);
+      color: var(--text);
+      font-family: 'Sora', sans-serif;
+      min-height: 100vh;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    body::before {
+      content: '';
+      position: fixed;
+      top: -50%;
+      left: -50%;
+      width: 200%;
+      height: 200%;
+      background: radial-gradient(ellipse at 20% 20%, rgba(240,165,0,0.04) 0%, transparent 50%),
+                  radial-gradient(ellipse at 80% 80%, rgba(74,158,255,0.04) 0%, transparent 50%);
+      animation: bgPulse 8s ease-in-out infinite alternate;
+      pointer-events: none;
+      z-index: 0;
+    }
+
+    @keyframes bgPulse {
+      0%   { transform: scale(1) rotate(0deg); }
+      100% { transform: scale(1.1) rotate(3deg); }
+    }
+
+    .card {
+      background: var(--bg2);
+      border: 1px solid var(--border);
+      border-radius: 24px;
+      padding: 48px 40px;
+      width: 100%;
+      max-width: 400px;
+      text-align: center;
+      position: relative;
+      z-index: 1;
+    }
+
+    .logo {
+      font-family: 'Space Mono', monospace;
+      font-size: 2.5rem;
+      font-weight: 700;
+      background: linear-gradient(135deg, var(--accent), var(--accent2));
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+      margin-bottom: 8px;
+    }
+
+    .subtitle {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+      letter-spacing: 2px;
+      text-transform: uppercase;
+      margin-bottom: 40px;
+    }
+
+    input[type="password"] {
+      width: 100%;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 14px 20px;
+      color: var(--text);
+      font-family: 'Space Mono', monospace;
+      font-size: 1rem;
+      letter-spacing: 3px;
+      text-align: center;
+      margin-bottom: 16px;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    input[type="password"]:focus {
+      border-color: var(--accent);
+    }
+
+    .btn {
+      width: 100%;
+      background: linear-gradient(135deg, var(--accent), #e09000);
+      color: #000;
+      border: none;
+      padding: 14px;
+      border-radius: 12px;
+      font-family: 'Space Mono', monospace;
+      font-weight: 700;
+      font-size: 0.9rem;
+      letter-spacing: 1px;
+      cursor: pointer;
+      text-transform: uppercase;
+      transition: all 0.3s;
+    }
+
+    .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+
+    .errore {
+      color: var(--accent2);
+      font-size: 0.85rem;
+      margin-bottom: 16px;
+    }
+  </style>
+</head>
+<body>
+  <div class="card">
+    <div class="logo">ReadAbile</div>
+    <div class="subtitle">Accesso riservato</div>
+
+    {% if errore %}
+    <div class="errore">⚠ Password errata</div>
+    {% endif %}
+
+    <form method="POST">
+      <input type="password" name="password" placeholder="••••••••" autofocus/>
+      <button type="submit" class="btn">Entra</button>
+    </form>
+  </div>
+</body>
+</html>

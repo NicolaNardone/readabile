@@ -1,15 +1,22 @@
 # ============================================================
 # ReadAbile - Server Web (Flask)
 # Gestisce l'interfaccia grafica dell'applicazione
+# Protetto da password per evitare accessi non autorizzati
 # ============================================================
 
-from flask import Flask, render_template, request, jsonify
+from flask import Flask, render_template, request, jsonify, session, redirect, url_for
 import os
 from ocr import leggi_testo
 from tts import testo_in_audio
 from mappa import genera_mappa
 
 app = Flask(__name__)
+
+# Chiave segreta per gestire le sessioni utente
+app.secret_key = "readabile2026"
+
+# Password di accesso all'applicazione
+PASSWORD = "maker2026"
 
 # Cartella dove salviamo le immagini caricate dall'utente
 UPLOAD_FOLDER = "uploads"
@@ -19,9 +26,36 @@ os.makedirs(UPLOAD_FOLDER, exist_ok=True)
 os.makedirs("static", exist_ok=True)
 
 
+@app.route("/login", methods=["GET", "POST"])
+def login():
+    """
+    Pagina di login.
+    GET = mostra il form di accesso
+    POST = verifica la password inserita
+    """
+    if request.method == "POST":
+        if request.form.get("password") == PASSWORD:
+            session["autenticato"] = True
+            return redirect(url_for("index"))
+        return render_template("login.html", errore=True)
+    return render_template("login.html", errore=False)
+
+
+@app.route("/logout")
+def logout():
+    """Cancella la sessione e reindirizza al login."""
+    session.clear()
+    return redirect(url_for("login"))
+
+
 @app.route("/")
 def index():
-    """Pagina principale dell'app."""
+    """
+    Pagina principale dell'app.
+    Se l'utente non e' autenticato, lo mando al login.
+    """
+    if not session.get("autenticato"):
+        return redirect(url_for("login"))
     return render_template("index.html")
 
 
@@ -32,26 +66,21 @@ def elabora():
     esegue OCR, TTS e genera la mappa.
     Restituisce i risultati in formato JSON.
     """
+    if not session.get("autenticato"):
+        return jsonify({"errore": "Non autorizzato"}), 401
 
-    # Controllo se è stato caricato un file
     if "immagine" not in request.files:
         return jsonify({"errore": "Nessuna immagine caricata"}), 400
 
     file = request.files["immagine"]
-
-    # Salvo l'immagine nella cartella uploads
     percorso = os.path.join(UPLOAD_FOLDER, file.filename)
     file.save(percorso)
 
-    # OCR — leggo il testo dall'immagine
     testo = leggi_testo(percorso)
     if testo == "Errore nella lettura del testo" or testo == "":
         return jsonify({"errore": "Impossibile leggere il testo"}), 500
 
-    # TTS — converto il testo in audio
     testo_in_audio(testo, "static/output.mp3")
-
-    # Mappa — genero la mappa concettuale
     genera_mappa(testo, "static/mappa.html")
 
     return jsonify({
