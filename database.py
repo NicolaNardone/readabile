@@ -15,8 +15,7 @@ load_dotenv("credenziali.env")
 
 # URL di connessione al database PostgreSQL
 # Su Railway viene letta dalla variabile d'ambiente DATABASE_URL
-DATABASE_URL = os.environ.get("DATABASE_URL")
-
+DATABASE_URL = os.environ.get("DATABASE_URL", "").replace("postgres://", "postgresql://", 1)
 
 def get_conn():
     """Apre e restituisce una connessione al database."""
