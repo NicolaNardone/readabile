@@ -62,6 +62,37 @@ def init_db():
         )
     """)
 
+    # Tabella richieste codice invito
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS richieste_codice (
+            id SERIAL PRIMARY KEY,
+            nome VARCHAR(100) NOT NULL,
+            email VARCHAR(150) NOT NULL,
+            messaggio TEXT,
+            gestita BOOLEAN DEFAULT FALSE,
+            data_richiesta TIMESTAMP DEFAULT NOW()
+        )
+    """)
+
+    conn.commit()
+    cur.close()
+    conn.close()
+    print("Database inizializzato!")
+
+    # Tabella utenti
+    cur.execute("""
+        CREATE TABLE IF NOT EXISTS utenti (
+            id SERIAL PRIMARY KEY,
+            nome VARCHAR(100) NOT NULL,
+            email VARCHAR(150) UNIQUE NOT NULL,
+            password_hash VARCHAR(255) NOT NULL,
+            stato VARCHAR(20) DEFAULT 'in_attesa',
+            token_sessione VARCHAR(100),
+            codice_invito_usato VARCHAR(50),
+            data_registrazione TIMESTAMP DEFAULT NOW()
+        )
+    """)
+
     conn.commit()
     cur.close()
     conn.close()
@@ -271,3 +302,43 @@ def get_codici():
     cur.close()
     conn.close()
     return codici
+
+def crea_richiesta_codice(nome, email, messaggio=""):
+    """Salva una richiesta di codice invito."""
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("""
+        INSERT INTO richieste_codice (nome, email, messaggio)
+        VALUES (%s, %s, %s)
+    """, (nome, email, messaggio))
+    conn.commit()
+    cur.close()
+    conn.close()
+
+
+def get_richieste_codice():
+    """Restituisce tutte le richieste non ancora gestite."""
+    conn = get_conn()
+    cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
+    cur.execute("""
+        SELECT * FROM richieste_codice
+        WHERE gestita = FALSE
+        ORDER BY data_richiesta DESC
+    """)
+    richieste = cur.fetchall()
+    cur.close()
+    conn.close()
+    return richieste
+
+
+def segna_richiesta_gestita(richiesta_id):
+    """Segna una richiesta come gestita."""
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        "UPDATE richieste_codice SET gestita = TRUE WHERE id = %s",
+        (richiesta_id,)
+    )
+    conn.commit()
+    cur.close()
+    conn.close()

@@ -94,8 +94,8 @@
       <div class="stat-label">In attesa</div>
     </div>
     <div class="stat">
-      <div class="stat-num">{{ codici|selectattr('usato', 'equalto', False)|list|length }}</div>
-      <div class="stat-label">Codici disponibili</div>
+      <div class="stat-num">{{ richieste|length }}</div>
+      <div class="stat-label">Richieste codice</div>
     </div>
   </div>
 
@@ -167,6 +167,30 @@
     <div class="empty">Nessun utente registrato ancora.</div>
     {% endif %}
   </div>
+
+  <!-- RICHIESTE CODICE -->
+  {% if richieste %}
+  <div class="card">
+    <div class="section-title">📬 Richieste codice invito</div>
+    <table>
+      <tr><th>Nome</th><th>Email</th><th>Messaggio</th><th>Data</th><th>Azioni</th></tr>
+      {% for r in richieste %}
+      <tr>
+        <td>{{ r.nome }}</td>
+        <td>{{ r.email }}</td>
+        <td style="color: var(--text-muted); font-size:0.85rem;">
+          {{ r.messaggio if r.messaggio else '—' }}
+        </td>
+        <td>{{ r.data_richiesta.strftime('%d/%m/%Y %H:%M') }}</td>
+        <td>
+          <a href="/admin/gestita/{{ r.id }}" class="btn-sm btn-approva"
+             onclick="return confirm('Segna come gestita?')">✓ Gestita</a>
+        </td>
+      </tr>
+      {% endfor %}
+    </table>
+  </div>
+  {% endif %}
 
   <!-- CODICI INVITO -->
   <div class="card">

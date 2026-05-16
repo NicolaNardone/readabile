@@ -8,11 +8,12 @@
     :root {
       --bg: #0a0a14; --bg2: #11111f; --accent: #f0a500;
       --accent2: #ff6b6b; --text: #e8e8f0; --text-muted: #8888aa;
-      --border: rgba(255,255,255,0.08); --green: #2ecc71;
+      --border: rgba(255,255,255,0.08); --green: #2ecc71; --blue: #4a9eff;
     }
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: var(--bg); color: var(--text); font-family: 'Sora', sans-serif;
-      min-height: 100vh; display: flex; align-items: center; justify-content: center; }
+      min-height: 100vh; display: flex; align-items: center; justify-content: center;
+      padding: 40px 16px; }
     body::before { content: ''; position: fixed; top: -50%; left: -50%;
       width: 200%; height: 200%;
       background: radial-gradient(ellipse at 20% 20%, rgba(240,165,0,0.04) 0%, transparent 50%),
@@ -30,26 +31,38 @@
     .field { margin-bottom: 16px; }
     label { display: block; font-size: 0.8rem; color: var(--text-muted);
       letter-spacing: 1px; text-transform: uppercase; margin-bottom: 6px; }
-    input { width: 100%; background: rgba(255,255,255,0.05); border: 1px solid var(--border);
-      border-radius: 10px; padding: 12px 16px; color: var(--text); font-family: 'Sora', sans-serif;
-      font-size: 0.95rem; outline: none; transition: border-color 0.3s; }
-    input:focus { border-color: var(--accent); }
+    input, textarea { width: 100%; background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border); border-radius: 10px; padding: 12px 16px;
+      color: var(--text); font-family: 'Sora', sans-serif; font-size: 0.95rem;
+      outline: none; transition: border-color 0.3s; resize: none; }
+    input:focus, textarea:focus { border-color: var(--accent); }
     .btn { width: 100%; background: linear-gradient(135deg, var(--accent), #e09000);
       color: #000; border: none; padding: 14px; border-radius: 12px;
       font-family: 'Space Mono', monospace; font-weight: 700; font-size: 0.9rem;
       letter-spacing: 1px; cursor: pointer; text-transform: uppercase;
       transition: all 0.3s; margin-top: 8px; }
     .btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    .btn-secondary { background: rgba(74,158,255,0.15); color: var(--blue);
+      border: 1px solid rgba(74,158,255,0.3); }
+    .btn-secondary:hover { background: rgba(74,158,255,0.25); }
     .errore { color: var(--accent2); font-size: 0.85rem; margin-bottom: 16px;
       padding: 10px 14px; background: rgba(255,107,107,0.1);
       border-radius: 8px; border: 1px solid rgba(255,107,107,0.2); }
     .successo { color: var(--green); font-size: 0.9rem; text-align: center;
       padding: 16px; background: rgba(46,204,113,0.1);
       border-radius: 12px; border: 1px solid rgba(46,204,113,0.2); margin-bottom: 16px; }
+    .info { color: var(--blue); font-size: 0.9rem; text-align: center;
+      padding: 16px; background: rgba(74,158,255,0.1);
+      border-radius: 12px; border: 1px solid rgba(74,158,255,0.2); margin-bottom: 16px; }
     .link { text-align: center; margin-top: 20px; font-size: 0.85rem; color: var(--text-muted); }
     .link a { color: var(--accent); text-decoration: none; }
     .link a:hover { text-decoration: underline; }
     .hint { font-size: 0.75rem; color: var(--text-muted); margin-top: 4px; }
+    .divider { display: flex; align-items: center; gap: 12px; margin: 24px 0; }
+    .divider::before, .divider::after { content: ''; flex: 1;
+      height: 1px; background: var(--border); }
+    .divider span { font-size: 0.75rem; color: var(--text-muted);
+      letter-spacing: 1px; text-transform: uppercase; white-space: nowrap; }
   </style>
 </head>
 <body>
@@ -58,11 +71,20 @@
     <div class="subtitle">Crea il tuo account</div>
 
     {% if successo %}
+    <!-- ✅ Registrazione completata -->
     <div class="successo">
       ✅ Registrazione inviata!<br>
       <small>Attendi l'approvazione da parte dell'amministratore.</small>
     </div>
     <div class="link"><a href="/login">← Torna al login</a></div>
+
+    {% elif richiesta_inviata %}
+    <!-- ✅ Richiesta codice inviata -->
+    <div class="info">
+      📬 Richiesta inviata!<br>
+      <small>L'amministratore ti invierà il codice invito alla tua email il prima possibile.</small>
+    </div>
+    <div class="link"><a href="/registrati">← Torna alla registrazione</a></div>
 
     {% else %}
 
@@ -70,7 +92,8 @@
     <div class="errore">⚠ {{ errore }}</div>
     {% endif %}
 
-    <form method="POST">
+    <!-- FORM REGISTRAZIONE -->
+    <form method="POST" action="/registrati">
       <div class="field">
         <label>Nome completo</label>
         <input type="text" name="nome" placeholder="Mario Rossi" required/>
@@ -91,6 +114,27 @@
         <div class="hint">Ricevuto dall'amministratore della scuola</div>
       </div>
       <button type="submit" class="btn">Registrati</button>
+    </form>
+
+    <!-- DIVISORE -->
+    <div class="divider"><span>Non hai il codice?</span></div>
+
+    <!-- FORM RICHIESTA CODICE -->
+    <form method="POST" action="/richiedi-codice">
+      <div class="field">
+        <label>Il tuo nome</label>
+        <input type="text" name="nome" placeholder="Mario Rossi" required/>
+      </div>
+      <div class="field">
+        <label>La tua email</label>
+        <input type="email" name="email" placeholder="mario@email.com" required/>
+        <div class="hint">L'amministratore ti invierà il codice a questo indirizzo</div>
+      </div>
+      <div class="field">
+        <label>Messaggio (opzionale)</label>
+        <textarea name="messaggio" placeholder="Es. Sono uno studente della classe 5A..." rows="3"></textarea>
+      </div>
+      <button type="submit" class="btn btn-secondary">📬 Richiedi codice invito</button>
     </form>
 
     <div class="link">Hai già un account? <a href="/login">Accedi</a></div>

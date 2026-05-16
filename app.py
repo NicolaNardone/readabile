@@ -16,7 +16,8 @@ from database import (
     verifica_codice_invito, segna_codice_usato,
     get_utenti_in_attesa, get_tutti_utenti,
     approva_utente, blocca_utente,
-    crea_codice_invito, get_codici, get_conn
+    crea_codice_invito, get_codici, get_conn,
+    crea_richiesta_codice, get_richieste_codice, segna_richiesta_gestita
 )
 
 load_dotenv("credenziali.env")
@@ -31,41 +32,9 @@ ADMIN_PASSWORD = os.environ.get("ADMIN_PASSWORD", "admin2026")
 os.makedirs("uploads", exist_ok=True)
 os.makedirs("static", exist_ok=True)
 
-
-
 # Inizializzo il database all'avvio
 init_db()
 
-@app.route("/admin/elimina/<int:user_id>")
-def admin_elimina(user_id):
-    if not admin_autenticato():
-        return redirect(url_for("admin_login"))
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute("DELETE FROM utenti WHERE id = %s", (user_id,))
-    conn.commit()
-    cur.close()
-    conn.close()
-    return redirect(url_for("admin_dashboard"))
-
-
-@app.route("/admin/reset-password/<int:user_id>", methods=["POST"])
-def admin_reset_password(user_id):
-    if not admin_autenticato():
-        return redirect(url_for("admin_login"))
-    nuova_password = request.form.get("nuova_password")
-    if not nuova_password or len(nuova_password) < 6:
-        return redirect(url_for("admin_dashboard"))
-    conn = get_conn()
-    cur = conn.cursor()
-    cur.execute(
-        "UPDATE utenti SET password_hash = %s WHERE id = %s",
-        (generate_password_hash(nuova_password), user_id)
-    )
-    conn.commit()
-    cur.close()
-    conn.close()
-    return redirect(url_for("admin_dashboard"))
 
 # ─── HELPERS ─────────────────────────────────────────────
 
@@ -125,10 +94,10 @@ def login():
 def registrati():
     """Pagina di registrazione con codice invito."""
     if request.method == "POST":
-        nome           = request.form.get("nome")
-        email          = request.form.get("email")
-        password       = request.form.get("password")
-        codice_invito  = request.form.get("codice_invito").strip().upper()
+        nome          = request.form.get("nome")
+        email         = request.form.get("email")
+        password      = request.form.get("password")
+        codice_invito = request.form.get("codice_invito").strip().upper()
 
         # Verifico il codice invito
         if not verifica_codice_invito(codice_invito):
@@ -146,6 +115,16 @@ def registrati():
         return render_template("registrati.html", successo=True)
 
     return render_template("registrati.html", errore=None)
+
+
+@app.route("/richiedi-codice", methods=["POST"])
+def richiedi_codice():
+    """Riceve una richiesta di codice invito da uno studente."""
+    nome      = request.form.get("nome")
+    email     = request.form.get("email")
+    messaggio = request.form.get("messaggio", "")
+    crea_richiesta_codice(nome, email, messaggio)
+    return render_template("registrati.html", richiesta_inviata=True)
 
 
 @app.route("/logout")
@@ -202,18 +181,20 @@ def admin_login():
 
 @app.route("/admin")
 def admin_dashboard():
-    """Pannello di controllo admin — utenti e codici invito."""
+    """Pannello di controllo admin — utenti, codici invito e richieste."""
     if not admin_autenticato():
         return redirect(url_for("admin_login"))
 
-    utenti        = get_tutti_utenti()
-    in_attesa     = get_utenti_in_attesa()
-    codici        = get_codici()
+    utenti    = get_tutti_utenti()
+    in_attesa = get_utenti_in_attesa()
+    codici    = get_codici()
+    richieste = get_richieste_codice()
 
     return render_template("admin.html",
         utenti=utenti,
         in_attesa=in_attesa,
-        codici=codici
+        codici=codici,
+        richieste=richieste
     )
 
 
@@ -235,16 +216,57 @@ def admin_blocca(user_id):
     return redirect(url_for("admin_dashboard"))
 
 
+@app.route("/admin/elimina/<int:user_id>")
+def admin_elimina(user_id):
+    """Elimina definitivamente un utente."""
+    if not admin_autenticato():
+        return redirect(url_for("admin_login"))
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute("DELETE FROM utenti WHERE id = %s", (user_id,))
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect(url_for("admin_dashboard"))
+
+
+@app.route("/admin/reset-password/<int:user_id>", methods=["POST"])
+def admin_reset_password(user_id):
+    """Resetta la password di un utente."""
+    if not admin_autenticato():
+        return redirect(url_for("admin_login"))
+    nuova_password = request.form.get("nuova_password")
+    if not nuova_password or len(nuova_password) < 6:
+        return redirect(url_for("admin_dashboard"))
+    conn = get_conn()
+    cur = conn.cursor()
+    cur.execute(
+        "UPDATE utenti SET password_hash = %s WHERE id = %s",
+        (generate_password_hash(nuova_password), user_id)
+    )
+    conn.commit()
+    cur.close()
+    conn.close()
+    return redirect(url_for("admin_dashboard"))
+
+
 @app.route("/admin/crea-codice", methods=["POST"])
 def admin_crea_codice():
     """Genera un nuovo codice invito."""
     if not admin_autenticato():
         return redirect(url_for("admin_login"))
-
     import secrets
-    # Genero un codice di 8 caratteri maiuscoli
     codice = secrets.token_hex(4).upper()
     crea_codice_invito(codice)
+    return redirect(url_for("admin_dashboard"))
+
+
+@app.route("/admin/gestita/<int:richiesta_id>")
+def admin_gestita(richiesta_id):
+    """Segna una richiesta di codice come gestita."""
+    if not admin_autenticato():
+        return redirect(url_for("admin_login"))
+    segna_richiesta_gestita(richiesta_id)
     return redirect(url_for("admin_dashboard"))
 
 
