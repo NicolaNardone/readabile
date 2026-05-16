@@ -10,20 +10,10 @@ import psycopg2.extras
 from werkzeug.security import generate_password_hash, check_password_hash
 import secrets
 
-DATABASE_URL = os.environ.get("DATABASE_URL", "")
-
-def get_conn():
-    """Apre e restituisce una connessione al database."""
-    url = os.environ.get("DATABASE_URL", "NON_TROVATA")
-    print(f"DATABASE_URL: {url[:30]}...")  # stampo solo i primi 30 caratteri
-    return psycopg2.connect(url)
-
-
-
-
 # URL di connessione al database PostgreSQL
 # Su Railway viene letta dalla variabile d'ambiente DATABASE_URL
 DATABASE_URL = os.environ.get("DATABASE_URL", "").replace("postgres://", "postgresql://", 1)
+
 
 def get_conn():
     """Apre e restituisce una connessione al database."""
@@ -71,25 +61,6 @@ def init_db():
             messaggio TEXT,
             gestita BOOLEAN DEFAULT FALSE,
             data_richiesta TIMESTAMP DEFAULT NOW()
-        )
-    """)
-
-    conn.commit()
-    cur.close()
-    conn.close()
-    print("Database inizializzato!")
-
-    # Tabella utenti
-    cur.execute("""
-        CREATE TABLE IF NOT EXISTS utenti (
-            id SERIAL PRIMARY KEY,
-            nome VARCHAR(100) NOT NULL,
-            email VARCHAR(150) UNIQUE NOT NULL,
-            password_hash VARCHAR(255) NOT NULL,
-            stato VARCHAR(20) DEFAULT 'in_attesa',
-            token_sessione VARCHAR(100),
-            codice_invito_usato VARCHAR(50),
-            data_registrazione TIMESTAMP DEFAULT NOW()
         )
     """)
 
@@ -151,7 +122,6 @@ def registra_utente(nome, email, password, codice_invito):
     conn = get_conn()
     cur = conn.cursor()
     try:
-        # Hash sicuro della password — mai salvare la password in chiaro!
         password_hash = generate_password_hash(password)
         cur.execute("""
             INSERT INTO utenti (nome, email, password_hash, stato, codice_invito_usato)
@@ -160,7 +130,6 @@ def registra_utente(nome, email, password, codice_invito):
         conn.commit()
         return True
     except psycopg2.IntegrityError:
-        # Email già registrata
         conn.rollback()
         return False
     finally:
@@ -171,16 +140,12 @@ def registra_utente(nome, email, password, codice_invito):
 def login_utente(email, password):
     """
     Verifica le credenziali dell'utente.
-    Se corrette e approvato, genera un nuovo token di sessione
-    (invalidando automaticamente le sessioni precedenti).
+    Se corrette e approvato, genera un nuovo token di sessione.
     Restituisce l'utente o None se le credenziali sono errate.
     """
     conn = get_conn()
     cur = conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor)
-    cur.execute(
-        "SELECT * FROM utenti WHERE email = %s",
-        (email,)
-    )
+    cur.execute("SELECT * FROM utenti WHERE email = %s", (email,))
     utente = cur.fetchone()
 
     if not utente:
@@ -188,13 +153,11 @@ def login_utente(email, password):
         conn.close()
         return None, "Email non trovata"
 
-    # Verifico la password
     if not check_password_hash(utente["password_hash"], password):
         cur.close()
         conn.close()
         return None, "Password errata"
 
-    # Verifico che l'account sia approvato
     if utente["stato"] == "in_attesa":
         cur.close()
         conn.close()
@@ -205,8 +168,6 @@ def login_utente(email, password):
         conn.close()
         return None, "Account bloccato"
 
-    # Genero un nuovo token di sessione univoco
-    # Questo invalida automaticamente qualsiasi altra sessione attiva
     nuovo_token = secrets.token_hex(32)
     cur.execute(
         "UPDATE utenti SET token_sessione = %s WHERE id = %s",
@@ -214,7 +175,6 @@ def login_utente(email, password):
     )
     conn.commit()
 
-    # Aggiorno il token nell'oggetto utente
     utente = dict(utente)
     utente["token_sessione"] = nuovo_token
 
@@ -271,10 +231,7 @@ def approva_utente(user_id):
     """Approva un utente permettendogli di accedere."""
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute(
-        "UPDATE utenti SET stato = 'approvato' WHERE id = %s",
-        (user_id,)
-    )
+    cur.execute("UPDATE utenti SET stato = 'approvato' WHERE id = %s", (user_id,))
     conn.commit()
     cur.close()
     conn.close()
@@ -284,10 +241,7 @@ def blocca_utente(user_id):
     """Blocca un utente impedendogli l'accesso."""
     conn = get_conn()
     cur = conn.cursor()
-    cur.execute(
-        "UPDATE utenti SET stato = 'bloccato' WHERE id = %s",
-        (user_id,)
-    )
+    cur.execute("UPDATE utenti SET stato = 'bloccato' WHERE id = %s", (user_id,))
     conn.commit()
     cur.close()
     conn.close()
@@ -302,6 +256,7 @@ def get_codici():
     cur.close()
     conn.close()
     return codici
+
 
 def crea_richiesta_codice(nome, email, messaggio=""):
     """Salva una richiesta di codice invito."""
