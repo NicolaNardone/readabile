@@ -165,6 +165,53 @@ def elabora():
         "mappa": "/static/mappa.html"
     })
 
+@app.route("/chiedi", methods=["POST"])
+def chiedi():
+    """
+    Riceve il testo estratto e una domanda dell'utente,
+    la manda a LLaMA via Groq e restituisce la risposta.
+    """
+    if not utente_autenticato():
+        return jsonify({"errore": "Non autorizzato"}), 401
+
+    testo   = request.json.get("testo", "")
+    domanda = request.json.get("domanda", "")
+
+    if not testo or not domanda:
+        return jsonify({"errore": "Mancano testo o domanda"}), 400
+
+    try:
+        from groq import Groq
+        client = Groq(api_key=os.environ.get("GROQ_API_KEY"))
+
+        risposta = client.chat.completions.create(
+            model="llama-3.3-70b-versatile",
+            messages=[
+                {
+                    "role": "system",
+                    "content": """Sei un assistente scolastico che aiuta studenti con dislessia.
+Rispondi sempre in modo:
+- Semplice e chiaro
+- Con frasi brevi
+- Senza termini tecnici inutili
+- In italiano
+Se ti chiedono di spiegare, usa esempi concreti e analogie semplici."""
+                },
+                {
+                    "role": "user",
+                    "content": f"Questo è il testo del libro:\n\n{testo}\n\nDomanda: {domanda}"
+                }
+            ],
+            temperature=0.5,
+            max_tokens=800
+        )
+
+        return jsonify({
+            "risposta": risposta.choices[0].message.content
+        })
+
+    except Exception as e:
+        return jsonify({"errore": str(e)}), 500
 
 # ─── ROTTE ADMIN ─────────────────────────────────────────
 

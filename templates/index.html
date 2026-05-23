@@ -18,6 +18,7 @@
       --accent:    #f0a500;
       --accent2:   #ff6b6b;
       --blue:      #4a9eff;
+      --green:     #2ecc71;
       --text:      #e8e8f0;
       --text-muted:#8888aa;
       --border:    rgba(255,255,255,0.08);
@@ -61,6 +62,40 @@
       z-index: 1;
     }
 
+    /* ── NAVBAR ── */
+    .navbar {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 40px;
+    }
+
+    .nav-saluto {
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .nav-saluto span {
+      color: var(--accent);
+      font-weight: 600;
+    }
+
+    .btn-logout {
+      background: rgba(255,107,107,0.1);
+      border: 1px solid rgba(255,107,107,0.3);
+      color: var(--accent2);
+      padding: 8px 16px;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      font-family: 'Space Mono', monospace;
+      cursor: pointer;
+      text-decoration: none;
+      transition: all 0.2s;
+    }
+
+    .btn-logout:hover { background: rgba(255,107,107,0.2); }
+
+    /* ── HEADER ── */
     header {
       text-align: center;
       margin-bottom: 60px;
@@ -86,6 +121,7 @@
       text-transform: uppercase;
     }
 
+    /* ── UPLOAD ── */
     .upload-zone {
       border: 2px dashed rgba(240,165,0,0.3);
       border-radius: 24px;
@@ -154,6 +190,7 @@
       object-fit: cover;
     }
 
+    /* ── BOTTONE PRINCIPALE ── */
     .btn {
       background: linear-gradient(135deg, var(--accent), #e09000);
       color: #000;
@@ -183,6 +220,7 @@
       transform: none;
     }
 
+    /* ── LOADING ── */
     .loading {
       display: none;
       text-align: center;
@@ -210,6 +248,7 @@
       text-transform: uppercase;
     }
 
+    /* ── RISULTATI ── */
     #risultati { display: none; }
     #risultati.visible { display: block; }
 
@@ -240,7 +279,9 @@
     .card:nth-child(2) { animation-delay: 0.1s; }
     .card:nth-child(3) { animation-delay: 0.2s; }
     .card:nth-child(4) { animation-delay: 0.3s; }
+    .card:nth-child(5) { animation-delay: 0.4s; }
 
+    /* ── TESTO DYSLEXIC ── */
     .testo-dyslexic {
       font-family: 'OpenDyslexic', 'Sora', sans-serif;
       font-size: 1.05rem;
@@ -257,6 +298,7 @@
     .testo-dyslexic::-webkit-scrollbar-track { background: transparent; }
     .testo-dyslexic::-webkit-scrollbar-thumb { background: var(--accent); border-radius: 2px; }
 
+    /* ── AUDIO ── */
     .audio-player {
       display: flex;
       align-items: center;
@@ -306,6 +348,7 @@
       border-radius: 2px;
     }
 
+    /* ── MAPPA ── */
     .mappa-container {
       border-radius: 16px;
       overflow: hidden;
@@ -320,6 +363,93 @@
       background: #1a1a2e;
     }
 
+    /* ── CHIEDI ALL'AI ── */
+    .ai-domande {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+
+    .ai-btn-domanda {
+      background: rgba(74,158,255,0.1);
+      border: 1px solid rgba(74,158,255,0.3);
+      color: var(--blue);
+      padding: 6px 14px;
+      border-radius: 50px;
+      font-size: 0.8rem;
+      cursor: pointer;
+      transition: all 0.2s;
+      font-family: 'Sora', sans-serif;
+    }
+
+    .ai-btn-domanda:hover {
+      background: rgba(74,158,255,0.2);
+      border-color: var(--blue);
+    }
+
+    .ai-input-row {
+      display: flex;
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+
+    .ai-input {
+      flex: 1;
+      background: rgba(255,255,255,0.05);
+      border: 1px solid var(--border);
+      border-radius: 12px;
+      padding: 12px 16px;
+      color: var(--text);
+      font-family: 'Sora', sans-serif;
+      font-size: 0.9rem;
+      outline: none;
+      transition: border-color 0.3s;
+    }
+
+    .ai-input:focus { border-color: var(--blue); }
+
+    .ai-btn-invia {
+      background: linear-gradient(135deg, var(--blue), #2980e0);
+      color: white;
+      border: none;
+      padding: 12px 20px;
+      border-radius: 12px;
+      font-family: 'Space Mono', monospace;
+      font-size: 0.85rem;
+      cursor: pointer;
+      transition: all 0.3s;
+      white-space: nowrap;
+    }
+
+    .ai-btn-invia:hover { opacity: 0.9; transform: translateY(-1px); }
+    .ai-btn-invia:disabled { opacity: 0.5; cursor: not-allowed; transform: none; }
+
+    .ai-spinner {
+      display: none;
+      text-align: center;
+      padding: 16px;
+      color: var(--text-muted);
+      font-size: 0.85rem;
+    }
+
+    .ai-spinner.visible { display: block; }
+
+    .ai-risposta {
+      background: rgba(74,158,255,0.05);
+      border: 1px solid rgba(74,158,255,0.2);
+      border-radius: 12px;
+      padding: 16px;
+      font-size: 0.95rem;
+      line-height: 1.7;
+      color: var(--text);
+      display: none;
+      white-space: pre-wrap;
+    }
+
+    .ai-risposta.visible { display: block; }
+
+    /* ── BADGE ── */
     .badge {
       display: inline-block;
       background: rgba(240,165,0,0.15);
@@ -333,6 +463,13 @@
       margin-bottom: 12px;
     }
 
+    .badge-blue {
+      background: rgba(74,158,255,0.15);
+      color: var(--blue);
+      border: 1px solid rgba(74,158,255,0.3);
+    }
+
+    /* ── FOOTER ── */
     footer {
       text-align: center;
       padding: 40px 0 20px;
@@ -346,11 +483,19 @@
 
 <div class="container">
 
+  <!-- NAVBAR -->
+  <div class="navbar">
+    <div class="nav-saluto">Ciao, <span>{{ nome }}</span> 👋</div>
+    <a href="/logout" class="btn-logout">← Esci</a>
+  </div>
+
+  <!-- HEADER -->
   <header>
     <div class="logo">ReadAbile</div>
     <div class="tagline">Tecnologia per la dislessia · ITET Cassandro Fermi Nervi</div>
   </header>
 
+  <!-- UPLOAD -->
   <div class="upload-zone" id="uploadZone">
     <span class="upload-icon">📷</span>
     <div class="upload-title">Carica una foto del testo</div>
@@ -361,23 +506,28 @@
     <input type="file" id="fileInput" accept="image/*"/>
   </div>
 
+  <!-- BOTTONE ELABORA -->
   <button class="btn" id="btnElabora" disabled onclick="elabora()">
     ✦ Elabora Testo
   </button>
 
+  <!-- LOADING -->
   <div class="loading" id="loading">
     <div class="spinner"></div>
     <div class="loading-text">Elaborazione in corso...</div>
   </div>
 
+  <!-- RISULTATI -->
   <div id="risultati">
 
+    <!-- TESTO -->
     <div class="card">
       <div class="badge">Testo Rilevato</div>
       <div class="section-title">📖 Testo con font per dislessia</div>
       <div class="testo-dyslexic" id="testoOutput"></div>
     </div>
 
+    <!-- AUDIO -->
     <div class="card">
       <div class="badge">Sintesi Vocale</div>
       <div class="section-title">🔊 Ascolta il testo</div>
@@ -393,12 +543,60 @@
       <audio id="audioPlayer" onended="resetAudio()" ontimeupdate="updateProgress()"></audio>
     </div>
 
+    <!-- MAPPA -->
     <div class="card">
       <div class="badge">Mappa Concettuale AI</div>
       <div class="section-title">🗺️ Mappa visiva del testo</div>
       <div class="mappa-container">
         <iframe id="mappaFrame" src=""></iframe>
       </div>
+    </div>
+
+    <!-- CHIEDI ALL'AI -->
+    <div class="card">
+      <div class="badge badge-blue">Chiedi all'AI</div>
+      <div class="section-title">🤖 Fatti spiegare il testo</div>
+
+      <!-- Domande preimpostate -->
+      <div class="ai-domande">
+        <button class="ai-btn-domanda"
+                onclick="chiediAI('Spiegami questo testo in modo semplice')">
+          💬 Spiegami in modo semplice
+        </button>
+        <button class="ai-btn-domanda"
+                onclick="chiediAI('Quali sono i concetti chiave di questo testo?')">
+          🔑 Concetti chiave
+        </button>
+        <button class="ai-btn-domanda"
+                onclick="chiediAI('Fammi un riassunto breve di questo testo')">
+          📝 Riassunto breve
+        </button>
+        <button class="ai-btn-domanda"
+                onclick="chiediAI('Spiegami questo testo come se avessi 10 anni')">
+          👶 Spiega semplice
+        </button>
+        <button class="ai-btn-domanda"
+                onclick="chiediAI('Fammi degli esempi pratici dei concetti spiegati in questo testo')">
+          💡 Esempi pratici
+        </button>
+      </div>
+
+      <!-- Input libero -->
+      <div class="ai-input-row">
+        <input type="text" class="ai-input" id="aiInput"
+               placeholder="Oppure scrivi una domanda libera..."
+               onkeydown="if(event.key==='Enter') chiediAI(this.value)"/>
+        <button class="ai-btn-invia" id="aiBtnInvia"
+                onclick="chiediAI(document.getElementById('aiInput').value)">
+          Invia →
+        </button>
+      </div>
+
+      <!-- Spinner AI -->
+      <div class="ai-spinner" id="aiSpinner">✨ L'AI sta elaborando...</div>
+
+      <!-- Risposta AI -->
+      <div class="ai-risposta" id="aiRisposta"></div>
     </div>
 
   </div>
@@ -414,7 +612,9 @@
   const imgPreview    = document.getElementById('imgPreview');
   const imgPreviewImg = document.getElementById('imgPreviewImg');
   let   fileSelezionato = null;
+  let   testoCorrente   = "";
 
+  // ── UPLOAD ──
   uploadZone.addEventListener('click', () => fileInput.click());
 
   uploadZone.addEventListener('dragover', e => {
@@ -448,12 +648,18 @@
     reader.readAsDataURL(file);
   }
 
+  // ── ELABORA ──
   async function elabora() {
     if (!fileSelezionato) return;
 
     btnElabora.disabled = true;
     document.getElementById('loading').classList.add('visible');
     document.getElementById('risultati').classList.remove('visible');
+
+    // Reset AI
+    document.getElementById('aiRisposta').classList.remove('visible');
+    document.getElementById('aiInput').value = '';
+    testoCorrente = '';
 
     const formData = new FormData();
     formData.append('immagine', fileSelezionato);
@@ -471,11 +677,15 @@
         return;
       }
 
+      // Mostro testo e salvo per l'AI
       document.getElementById('testoOutput').textContent = dati.testo;
+      testoCorrente = dati.testo;
 
+      // Carico audio
       const audio = document.getElementById('audioPlayer');
       audio.src = dati.audio + '?t=' + Date.now();
 
+      // Carico mappa
       document.getElementById('mappaFrame').src = dati.mappa + '?t=' + Date.now();
 
       document.getElementById('risultati').classList.add('visible');
@@ -488,6 +698,7 @@
     }
   }
 
+  // ── AUDIO ──
   function toggleAudio() {
     const audio = document.getElementById('audioPlayer');
     const btn   = document.getElementById('playBtn');
@@ -509,6 +720,47 @@
     const audio = document.getElementById('audioPlayer');
     const pct   = (audio.currentTime / audio.duration) * 100;
     document.getElementById('progressFill').style.width = pct + '%';
+  }
+
+  // ── CHIEDI ALL'AI ──
+  async function chiediAI(domanda) {
+    if (!domanda || !testoCorrente) return;
+
+    // Metto la domanda nell'input
+    document.getElementById('aiInput').value = domanda;
+
+    // Mostro spinner
+    document.getElementById('aiSpinner').classList.add('visible');
+    document.getElementById('aiRisposta').classList.remove('visible');
+    document.getElementById('aiBtnInvia').disabled = true;
+
+    try {
+      const risposta = await fetch('/chiedi', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          testo:   testoCorrente,
+          domanda: domanda
+        })
+      });
+
+      const dati = await risposta.json();
+
+      if (dati.errore) {
+        document.getElementById('aiRisposta').textContent = 'Errore: ' + dati.errore;
+      } else {
+        document.getElementById('aiRisposta').textContent = dati.risposta;
+      }
+
+      document.getElementById('aiRisposta').classList.add('visible');
+
+    } catch (e) {
+      document.getElementById('aiRisposta').textContent = 'Errore di connessione';
+      document.getElementById('aiRisposta').classList.add('visible');
+    } finally {
+      document.getElementById('aiSpinner').classList.remove('visible');
+      document.getElementById('aiBtnInvia').disabled = false;
+    }
   }
 </script>
 
