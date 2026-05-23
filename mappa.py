@@ -1,8 +1,9 @@
 # ============================================================
 # ReadAbile - Modulo Mappa Visiva (versione D3.js Algor-style)
-# - Misura testo con Canvas API (precisione assoluta)
+# - Misura testo con Canvas API
 # - Colori per ramo
-# - Auto-fit reale allo schermo
+# - Auto-fit allo schermo
+# - Export SVG con testo correttamente centrato
 # ============================================================
 
 import os
@@ -45,14 +46,14 @@ Testo:
     risposta = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[
-            {
+            {{
                 "role": "system",
                 "content": "Sei un esperto di didattica che crea mappe concettuali per studenti delle scuole superiori italiane. Rispondi SEMPRE e SOLO con JSON valido. Mappe complete con 3-5 rami e 2-4 sotto-concetti informativi e specifici per ramo."
-            },
-            {
+            }},
+            {{
                 "role": "user",
                 "content": prompt
-            }
+            }}
         ],
         temperature=0.3,
         max_tokens=1000
@@ -69,31 +70,31 @@ def genera_mappa(testo, percorso_output="static/mappa.html"):
     print(f"Struttura generata: {struttura['concetto_centrale']}")
 
     palette = [
-        {"dark": "#1a4f8a", "mid": "#2471a3", "light": "#aed6f1", "stroke": "#4a9eff"},
-        {"dark": "#512e5f", "mid": "#7d3c98", "light": "#d7bde2", "stroke": "#a569bd"},
-        {"dark": "#145a32", "mid": "#1e8449", "light": "#a9dfbf", "stroke": "#2ecc71"},
-        {"dark": "#7d6608", "mid": "#b7950b", "light": "#f9e79f", "stroke": "#f1c40f"},
-        {"dark": "#6e2c00", "mid": "#a04000", "light": "#f5cba7", "stroke": "#e67e22"},
+        {{"dark": "#1a4f8a", "mid": "#2471a3", "light": "#aed6f1", "stroke": "#4a9eff"}},
+        {{"dark": "#512e5f", "mid": "#7d3c98", "light": "#d7bde2", "stroke": "#a569bd"}},
+        {{"dark": "#145a32", "mid": "#1e8449", "light": "#a9dfbf", "stroke": "#2ecc71"}},
+        {{"dark": "#7d6608", "mid": "#b7950b", "light": "#f9e79f", "stroke": "#f1c40f"}},
+        {{"dark": "#6e2c00", "mid": "#a04000", "light": "#f5cba7", "stroke": "#e67e22"}},
     ]
 
-    albero = {
+    albero = {{
         "name": struttura["concetto_centrale"],
         "level": 0,
         "colorIdx": -1,
         "children": []
-    }
+    }}
 
     for i, ramo in enumerate(struttura["rami"]):
         ci = i % len(palette)
-        nodo = {
+        nodo = {{
             "name": ramo["concetto"],
             "level": 1,
             "colorIdx": ci,
             "children": [
-                {"name": s, "level": 2, "colorIdx": ci, "children": []}
+                {{"name": s, "level": 2, "colorIdx": ci, "children": []}}
                 for s in ramo.get("sotto_concetti", [])
             ]
-        }
+        }}
         albero["children"].append(nodo)
 
     dati_json = json.dumps(albero, ensure_ascii=False)
@@ -116,67 +117,32 @@ def genera_mappa(testo, percorso_output="static/mappa.html"):
     transition: background 0.3s;
   }}
   body.light {{ background: #f5f7ff; }}
-
-  .link {{
-    fill: none;
-    stroke-width: 2px;
-    stroke-opacity: 0.7;
-  }}
-  .node rect {{
-    stroke-width: 2px;
-    cursor: grab;
-    transition: filter 0.15s;
-  }}
-  .node rect:active {{ cursor: grabbing; }}
-  .node:hover rect {{ filter: brightness(1.2); }}
-  .node text {{
-    font-family: 'OpenDyslexic','Segoe UI',sans-serif;
-    pointer-events: none;
-    dominant-baseline: central;
-    text-anchor: middle;
-  }}
-
+  .link {{ fill:none; stroke-width:2px; stroke-opacity:0.7; }}
+  .node rect {{ stroke-width:2px; cursor:grab; transition:filter 0.15s; }}
+  .node rect:active {{ cursor:grabbing; }}
+  .node:hover rect {{ filter:brightness(1.2); }}
   .controls {{
-    position: fixed;
-    top: 12px;
-    right: 12px;
-    z-index: 100;
-    display: flex;
-    gap: 8px;
+    position:fixed; top:12px; right:12px; z-index:100;
+    display:flex; gap:8px;
   }}
   .ctrl-btn {{
-    background: rgba(255,255,255,0.12);
-    backdrop-filter: blur(8px);
-    border: 1px solid rgba(255,255,255,0.2);
-    border-radius: 50px;
-    padding: 7px 16px;
-    cursor: pointer;
-    font-family: 'OpenDyslexic',sans-serif;
-    font-size: 11px;
-    color: white;
-    display: flex;
-    align-items: center;
-    gap: 6px;
-    transition: all 0.2s;
-    user-select: none;
+    background:rgba(255,255,255,0.12); backdrop-filter:blur(8px);
+    border:1px solid rgba(255,255,255,0.2); border-radius:50px;
+    padding:7px 16px; cursor:pointer;
+    font-family:'OpenDyslexic',sans-serif; font-size:11px; color:white;
+    display:flex; align-items:center; gap:6px;
+    transition:all 0.2s; user-select:none;
   }}
   body.light .ctrl-btn {{
-    background: rgba(0,0,0,0.07);
-    border-color: rgba(0,0,0,0.15);
-    color: #333;
+    background:rgba(0,0,0,0.07); border-color:rgba(0,0,0,0.15); color:#333;
   }}
-  .ctrl-btn:hover {{ transform: scale(1.05); }}
-
+  .ctrl-btn:hover {{ transform:scale(1.05); }}
   .hint {{
-    position: fixed;
-    bottom: 12px;
-    right: 12px;
-    font-size: 10px;
-    color: rgba(255,255,255,0.25);
-    font-family: 'OpenDyslexic',sans-serif;
-    z-index: 100;
+    position:fixed; bottom:12px; right:12px;
+    font-size:10px; color:rgba(255,255,255,0.25);
+    font-family:'OpenDyslexic',sans-serif; z-index:100;
   }}
-  body.light .hint {{ color: rgba(0,0,0,0.25); }}
+  body.light .hint {{ color:rgba(0,0,0,0.25); }}
 </style>
 </head>
 <body class="dark">
@@ -196,213 +162,178 @@ def genera_mappa(testo, percorso_output="static/mappa.html"):
 const DATA    = {dati_json};
 const PALETTE = {palette_json};
 
-// Padding e font size per livello
 const LV = [
-  {{ fs: 15, px: 28, py: 14 }},
-  {{ fs: 13, px: 22, py: 12 }},
-  {{ fs: 11, px: 18, py: 10 }},
+  {{ fs:15, px:28, py:14 }},
+  {{ fs:13, px:22, py:12 }},
+  {{ fs:11, px:18, py:10 }},
 ];
-
 const LEVEL_GAP = 130;
 let temaDark = true;
 
-// ── Misura testo con Canvas API (precisione assoluta) ─────
-const _canvas = document.createElement('canvas');
-const _ctx    = _canvas.getContext('2d');
-
+// ── Canvas measureText ────────────────────────────────────
+const _cv  = document.createElement('canvas');
+const _ctx = _cv.getContext('2d');
 function misuraTesto(text, fs) {{
   _ctx.font = `600 ${{fs}}px OpenDyslexic, Segoe UI, sans-serif`;
   return _ctx.measureText(text).width;
 }}
 
-// ── Calcola dimensione nodo basata sul testo reale ────────
 function calcolaDim(name, lv) {{
-  const cfg = LV[Math.min(lv, 2)];
+  const cfg = LV[Math.min(lv,2)];
   const tw  = misuraTesto(name, cfg.fs);
-  const w   = tw + cfg.px * 2;
-  const h   = cfg.fs + cfg.py * 2;
-  return {{ w: Math.max(w, 80), h: Math.max(h, 36) }};
+  return {{
+    w: Math.max(tw + cfg.px*2, 80),
+    h: Math.max(cfg.fs + cfg.py*2, 36)
+  }};
 }}
 
-// ── Colore nodo ───────────────────────────────────────────
 function nodeColor(d, tema) {{
   if (d.data.level === 0) {{
-    return tema === 'dark'
+    return tema==='dark'
       ? {{ fill:'#0f2d4a', stroke:'#4a9eff', text:'#d6eaf8' }}
-      : {{ fill:'#2980b9', stroke:'#1a5276', text:'white'   }};
+      : {{ fill:'#2980b9', stroke:'#1a5276', text:'white' }};
   }}
   const p  = PALETTE[d.data.colorIdx] || PALETTE[0];
   const lv = d.data.level;
-  return tema === 'dark'
-    ? {{ fill: lv===1 ? p.dark : p.mid,   stroke: p.stroke, text:'#ffffff' }}
-    : {{ fill: lv===1 ? p.mid  : p.light, stroke: p.dark,   text: lv===2 ? '#222':'#fff' }};
+  return tema==='dark'
+    ? {{ fill:lv===1?p.dark:p.mid, stroke:p.stroke, text:'#ffffff' }}
+    : {{ fill:lv===1?p.mid:p.light, stroke:p.dark, text:lv===2?'#222':'#fff' }};
 }}
 
 // ── SVG e zoom ────────────────────────────────────────────
 const svg   = d3.select('body').append('svg').style('position','absolute');
 const gZoom = svg.append('g');
-const zoom  = d3.zoom().scaleExtent([0.05, 5]).on('zoom', e => gZoom.attr('transform', e.transform));
+const zoom  = d3.zoom().scaleExtent([0.05,5]).on('zoom', e => gZoom.attr('transform', e.transform));
 svg.call(zoom);
-
-function resize() {{ svg.attr('width', window.innerWidth).attr('height', window.innerHeight); }}
+function resize() {{ svg.attr('width',window.innerWidth).attr('height',window.innerHeight); }}
 resize();
-window.addEventListener('resize', () => {{ resize(); }});
+window.addEventListener('resize', resize);
 
 // ── Gerarchia ─────────────────────────────────────────────
 const root = d3.hierarchy(DATA);
+root.each(d => {{ const dim=calcolaDim(d.data.name,d.data.level); d.nw=dim.w; d.nh=dim.h; }});
 
-// Precalcolo dimensioni nodi
-root.each(d => {{
-  const dim = calcolaDim(d.data.name, d.data.level);
-  d.nw = dim.w;
-  d.nh = dim.h;
-}});
-
-// ── Layout D3 tree con size adattivo ─────────────────────
-// size([width, height]) distribuisce i nodi nello spazio in modo
-// che non si sovrappongano mai — D3 gestisce tutto automaticamente
 const nFoglie = root.leaves().length;
-const treeW   = Math.max(nFoglie * 240, window.innerWidth  * 0.9);
-const treeH   = Math.max((root.height + 1) * LEVEL_GAP, window.innerHeight * 0.75);
-
-const tree = d3.tree().size([treeW, treeH]);
+const treeW   = Math.max(nFoglie*240, window.innerWidth*0.9);
+const treeH   = Math.max((root.height+1)*LEVEL_GAP, window.innerHeight*0.75);
+const tree    = d3.tree().size([treeW, treeH]);
 tree(root);
+root.each(d => {{ d.px=d.x; d.py=d.y; }});
 
-// D3 tree: d.x = posizione orizzontale, d.y = profondità
-root.each(d => {{
-  d.px = d.x;
-  d.py = d.y;
-}});
-
-// ── Bounding box e auto-fit ───────────────────────────────
+// ── Bounding box ─────────────────────────────────────────
 const nodes = root.descendants();
-const xMin  = d3.min(nodes, d => d.px - d.nw / 2);
-const xMax  = d3.max(nodes, d => d.px + d.nw / 2);
-const yMin  = d3.min(nodes, d => d.py);
-const yMax  = d3.max(nodes, d => d.py + d.nh);
-const cW    = xMax - xMin;
-const cH    = yMax - yMin;
+const xMin  = d3.min(nodes, d=>d.px-d.nw/2);
+const xMax  = d3.max(nodes, d=>d.px+d.nw/2);
+const yMin  = d3.min(nodes, d=>d.py);
+const yMax  = d3.max(nodes, d=>d.py+d.nh);
+const cW    = xMax-xMin;
+const cH    = yMax-yMin;
 const PAD   = 48;
 
 function fitTransform() {{
-  const W  = window.innerWidth;
-  const H  = window.innerHeight;
-  const sc = Math.min((W - PAD * 2) / cW, (H - PAD * 2) / cH, 1.1);
-  const tx = W / 2 - (xMin + cW / 2) * sc;
-  const ty = PAD - yMin * sc;
-  return d3.zoomIdentity.translate(tx, ty).scale(sc);
+  const W=window.innerWidth, H=window.innerHeight;
+  const sc=Math.min((W-PAD*2)/cW, (H-PAD*2)/cH, 1.1);
+  return d3.zoomIdentity
+    .translate(W/2-(xMin+cW/2)*sc, PAD-yMin*sc)
+    .scale(sc);
 }}
-
 svg.call(zoom.transform, fitTransform());
 
 // ── Links ─────────────────────────────────────────────────
-function linkPath(s, t) {{
-  const sx = s.px, sy = s.py + s.nh;
-  const tx = t.px, ty = t.py;
-  const my = (sy + ty) / 2;
+function linkPath(s,t) {{
+  const sx=s.px, sy=s.py+s.nh, tx=t.px, ty=t.py, my=(sy+ty)/2;
   return `M${{sx}},${{sy}} C${{sx}},${{my}} ${{tx}},${{my}} ${{tx}},${{ty}}`;
 }}
-
 const gLinks  = gZoom.append('g');
-const linkEls = gLinks.selectAll('path')
-  .data(root.links())
-  .join('path')
-  .attr('class', 'link')
-  .attr('stroke', d => {{
-    const ci = d.target.data.colorIdx;
-    return ci >= 0 ? PALETTE[ci].stroke : '#4a9eff';
-  }})
-  .attr('d', d => linkPath(d.source, d.target));
+const linkEls = gLinks.selectAll('path').data(root.links()).join('path')
+  .attr('class','link')
+  .attr('stroke', d=>{{ const ci=d.target.data.colorIdx; return ci>=0?PALETTE[ci].stroke:'#4a9eff'; }})
+  .attr('d', d=>linkPath(d.source,d.target));
 
 // ── Nodi ─────────────────────────────────────────────────
 const gNodes  = gZoom.append('g');
-const nodeEls = gNodes.selectAll('g')
-  .data(nodes)
-  .join('g')
-  .attr('class', 'node')
-  .attr('transform', d => `translate(${{d.px - d.nw/2}},${{d.py}})`)
+const nodeEls = gNodes.selectAll('g').data(nodes).join('g')
+  .attr('class','node')
+  .attr('transform', d=>`translate(${{d.px-d.nw/2}},${{d.py}})`)
   .call(d3.drag()
-    .on('drag', function(e, d) {{
-      d.px += e.dx;
-      d.py += e.dy;
-      d3.select(this).attr('transform', `translate(${{d.px - d.nw/2}},${{d.py}})`);
-      linkEls.attr('d', dd => linkPath(dd.source, dd.target));
+    .on('drag', function(e,d) {{
+      d.px+=e.dx; d.py+=e.dy;
+      d3.select(this).attr('transform',`translate(${{d.px-d.nw/2}},${{d.py}})`);
+      linkEls.attr('d', dd=>linkPath(dd.source,dd.target));
     }})
   );
 
-// Rettangoli
 nodeEls.append('rect')
-  .attr('width',  d => d.nw)
-  .attr('height', d => d.nh)
-  .attr('rx', 10).attr('ry', 10)
-  .attr('fill',   d => nodeColor(d, 'dark').fill)
-  .attr('stroke', d => nodeColor(d, 'dark').stroke);
+  .attr('width',  d=>d.nw)
+  .attr('height', d=>d.nh)
+  .attr('rx',10).attr('ry',10)
+  .attr('fill',   d=>nodeColor(d,'dark').fill)
+  .attr('stroke', d=>nodeColor(d,'dark').stroke);
 
-// Testo centrato (una sola riga — la larghezza è calcolata sul testo)
+// Testo con y e dy espliciti (no dominant-baseline CSS)
+// in modo che funzioni correttamente anche nell'SVG esportato
 nodeEls.append('text')
-  .attr('x', d => d.nw / 2)
-  .attr('y', d => d.nh / 2)
-  .attr('fill',        d => nodeColor(d, 'dark').text)
-  .attr('font-size',   d => LV[Math.min(d.data.level,2)].fs + 'px')
-  .attr('font-weight', d => d.data.level === 0 ? '700' : '600')
-  .text(d => d.data.name);
+  .attr('x',          d=>d.nw/2)
+  .attr('y',          d=>d.nh/2)
+  .attr('dy',         d=>LV[Math.min(d.data.level,2)].fs*0.35+'px')
+  .attr('text-anchor','middle')
+  .attr('fill',       d=>nodeColor(d,'dark').text)
+  .attr('font-family','OpenDyslexic, Segoe UI, sans-serif')
+  .attr('font-size',  d=>LV[Math.min(d.data.level,2)].fs+'px')
+  .attr('font-weight',d=>d.data.level===0?'700':'600')
+  .text(d=>d.data.name);
 
 // ── Toggle tema ───────────────────────────────────────────
 function toggleTema() {{
-  temaDark = !temaDark;
-  const tema = temaDark ? 'dark' : 'light';
-  document.body.className = tema;
-  document.getElementById('themeIcon').textContent  = temaDark ? '☀️' : '🌙';
-  document.getElementById('themeLabel').textContent = temaDark ? 'Tema chiaro' : 'Tema scuro';
+  temaDark=!temaDark;
+  const tema=temaDark?'dark':'light';
+  document.body.className=tema;
+  document.getElementById('themeIcon').textContent  =temaDark?'☀️':'🌙';
+  document.getElementById('themeLabel').textContent =temaDark?'Tema chiaro':'Tema scuro';
   nodeEls.selectAll('rect')
-    .attr('fill',   d => nodeColor(d, tema).fill)
-    .attr('stroke', d => nodeColor(d, tema).stroke);
+    .attr('fill',  d=>nodeColor(d,tema).fill)
+    .attr('stroke',d=>nodeColor(d,tema).stroke);
   nodeEls.selectAll('text')
-    .attr('fill',   d => nodeColor(d, tema).text);
+    .attr('fill',  d=>nodeColor(d,tema).text);
 }}
 
-// ── Fit schermo ───────────────────────────────────────────
 function resetZoom() {{
   svg.transition().duration(500).call(zoom.transform, fitTransform());
 }}
-// ── Scarica mappa come PNG ────────────────────────────────
-function scarica() {{
-  const pad = 50;
-  
-  // ViewBox esatto sul contenuto reale (coordinate dei nodi)
-  const vx = xMin - pad;
-  const vy = yMin - pad;
-  const vw = cW + pad * 2;
-  const vh = cH + pad * 2;
 
-  // Creo SVG pulito da zero
-  const ns = 'http://www.w3.org/2000/svg';
-  const out = document.createElementNS(ns, 'svg');
-  out.setAttribute('xmlns', ns);
-  out.setAttribute('width',   vw);
-  out.setAttribute('height',  vh);
-  out.setAttribute('viewBox', `${{vx}} ${{vy}} ${{vw}} ${{vh}}`);
+// ── Scarica SVG ───────────────────────────────────────────
+// Usa le coordinate reali dei nodi (non il viewport)
+// Il testo è già centrato con attributi espliciti, funziona in tutti i viewer
+function scarica() {{
+  const pad=50;
+  const vx=xMin-pad, vy=yMin-pad, vw=cW+pad*2, vh=cH+pad*2;
+  const ns='http://www.w3.org/2000/svg';
+
+  // SVG pulito con viewBox esatto sul contenuto
+  const out=document.createElementNS(ns,'svg');
+  out.setAttribute('xmlns',ns);
+  out.setAttribute('width',vw);
+  out.setAttribute('height',vh);
+  out.setAttribute('viewBox',`${{vx}} ${{vy}} ${{vw}} ${{vh}}`);
 
   // Sfondo
-  const bg = document.createElementNS(ns, 'rect');
-  bg.setAttribute('x', vx); bg.setAttribute('y', vy);
-  bg.setAttribute('width', vw); bg.setAttribute('height', vh);
-  bg.setAttribute('fill', temaDark ? '#0d0d1a' : '#f5f7ff');
+  const bg=document.createElementNS(ns,'rect');
+  bg.setAttribute('x',vx); bg.setAttribute('y',vy);
+  bg.setAttribute('width',vw); bg.setAttribute('height',vh);
+  bg.setAttribute('fill',temaDark?'#0d0d1a':'#f5f7ff');
   out.appendChild(bg);
 
-  // Copio links e nodi dal gZoom (già nelle coordinate corrette)
-  const gClone = gZoom.node().cloneNode(true);
+  // Contenuto — copio gZoom senza il transform di zoom
+  const gClone=gZoom.node().cloneNode(true);
   gClone.removeAttribute('transform');
   out.appendChild(gClone);
 
-  // Scarico
-  const data = new XMLSerializer().serializeToString(out);
-  const blob = new Blob([data], {{type:'image/svg+xml;charset=utf-8'}});
-  const url  = URL.createObjectURL(blob);
-  const a    = document.createElement('a');
-  a.download = 'mappa-readabile.svg';
-  a.href = url;
-  a.click();
+  const data=new XMLSerializer().serializeToString(out);
+  const blob=new Blob([data],{{type:'image/svg+xml;charset=utf-8'}});
+  const url=URL.createObjectURL(blob);
+  const a=document.createElement('a');
+  a.download='mappa-readabile.svg';
+  a.href=url; a.click();
   URL.revokeObjectURL(url);
 }}
 </script>
@@ -411,7 +342,6 @@ function scarica() {{
 
     with open(percorso_output, "w", encoding="utf-8") as f:
         f.write(html)
-
     print(f"Mappa D3 salvata in: {percorso_output}")
 
 
