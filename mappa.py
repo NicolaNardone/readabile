@@ -250,10 +250,10 @@ root.each(d => {{
 
 // Layout tree con separazione basata su larghezza nodi
 const treeLayout = d3.tree()
-  .nodeSize([1, 140])
+  .nodeSize([220, 140])
   .separation((a, b) => {{
-    const gap = (a.nw / 2 + b.nw / 2 + 30);
-    return a.parent === b.parent ? gap / 60 : gap / 50;
+    const gap = a.nw / 2 + b.nw / 2 + 40;
+    return gap / 110;
   }});
 
 treeLayout(root);
