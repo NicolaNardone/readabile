@@ -187,7 +187,7 @@ def genera_mappa(testo, percorso_output="static/mappa.html"):
     <span id="themeLabel">Tema chiaro</span>
   </div>
   <div class="ctrl-btn" onclick="resetZoom()">🔍 Fit schermo</div>
-  <div class="ctrl-btn" onclick="scarica()">💾 Scarica PNG</div>
+  <div class="ctrl-btn" onclick="scarica()">💾 Scarica SVG</div>
 </div>
 <div class="hint">Scorri per zoomare · Trascina per muovere</div>
 
@@ -367,43 +367,42 @@ function resetZoom() {{
 }}
 // ── Scarica mappa come PNG ────────────────────────────────
 function scarica() {{
-  const trasf = fitTransform();
+  const margine = 60;
   
-  // Calcolo dimensioni reali del contenuto con il fit
-  const margine = 40;
-  const pw = cW * trasf.k + margine * 2;
-  const ph = cH * trasf.k + margine * 2;
-  
-  // Creo un SVG temporaneo delle dimensioni esatte del contenuto
+  // Clone SVG con viewBox esatto sul contenuto
   const svgClone = svg.node().cloneNode(true);
-  svgClone.setAttribute('width',  pw);
-  svgClone.setAttribute('height', ph);
-  svgClone.setAttribute('viewBox', `${{xMin - margine / trasf.k}} ${{yMin - margine / trasf.k}} ${{cW + margine * 2 / trasf.k}} ${{cH + margine * 2 / trasf.k}}`);
+  const vx = xMin - margine;
+  const vy = yMin - margine;
+  const vw = cW + margine * 2;
+  const vh = cH + margine * 2;
   
-  // Rimuovo i controlli dal clone
-  svgClone.querySelectorAll('.controls, .hint').forEach(el => el.remove());
+  svgClone.setAttribute('width',   vw);
+  svgClone.setAttribute('height',  vh);
+  svgClone.setAttribute('viewBox', `${{vx}} ${{vy}} ${{vw}} ${{vh}}`);
+  svgClone.removeAttribute('style');
+  
+  // Rimuovo il gruppo zoom e prendo solo il contenuto
+  const gZoomClone = svgClone.querySelector('g');
+  if (gZoomClone) gZoomClone.removeAttribute('transform');
 
+  // Aggiungo sfondo
+  const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
+  rect.setAttribute('x', vx);
+  rect.setAttribute('y', vy);
+  rect.setAttribute('width',  vw);
+  rect.setAttribute('height', vh);
+  rect.setAttribute('fill', temaDark ? '#0d0d1a' : '#f5f7ff');
+  svgClone.insertBefore(rect, svgClone.firstChild);
+
+  // Scarico come SVG
   const svgData = new XMLSerializer().serializeToString(svgClone);
-  const svgBlob = new Blob([svgData], {{type:'image/svg+xml;charset=utf-8'}});
-  const url     = URL.createObjectURL(svgBlob);
-
-  const img = new Image();
-  img.onload = () => {{
-    const canvas = document.createElement('canvas');
-    canvas.width  = pw * 2;
-    canvas.height = ph * 2;
-    const ctx = canvas.getContext('2d');
-    ctx.scale(2, 2);
-    ctx.fillStyle = temaDark ? '#0d0d1a' : '#f5f7ff';
-    ctx.fillRect(0, 0, pw, ph);
-    ctx.drawImage(img, 0, 0, pw, ph);
-    URL.revokeObjectURL(url);
-    const link = document.createElement('a');
-    link.download = 'mappa-readabile.png';
-    link.href     = canvas.toDataURL('image/png');
-    link.click();
-  }};
-  img.src = url;
+  const blob    = new Blob([svgData], {{type:'image/svg+xml;charset=utf-8'}});
+  const url     = URL.createObjectURL(blob);
+  const link    = document.createElement('a');
+  link.download = 'mappa-readabile.svg';
+  link.href     = url;
+  link.click();
+  URL.revokeObjectURL(url);
 }}
 </script>
 </body>
