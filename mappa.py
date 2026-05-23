@@ -259,7 +259,7 @@ root.each(d => {{
 // Layout tree con nodeSize adattivo
 // Calcola quante foglie ci sono per stimare la larghezza necessaria
 const nFoglie = root.leaves().length;
-const largMin = nFoglie * 160;
+const largMin = nFoglie * 200;
 const altMin  = (root.height + 1) * LEVEL_GAP;
 
 const tree = d3.tree()
