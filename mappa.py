@@ -187,6 +187,7 @@ def genera_mappa(testo, percorso_output="static/mappa.html"):
     <span id="themeLabel">Tema chiaro</span>
   </div>
   <div class="ctrl-btn" onclick="resetZoom()">🔍 Fit schermo</div>
+  <div class="ctrl-btn" onclick="scarica()">💾 Scarica PNG</div>
 </div>
 <div class="hint">Scorri per zoomare · Trascina per muovere</div>
 
@@ -363,6 +364,38 @@ function toggleTema() {{
 // ── Fit schermo ───────────────────────────────────────────
 function resetZoom() {{
   svg.transition().duration(500).call(zoom.transform, fitTransform());
+}}
+// ── Scarica mappa come PNG ────────────────────────────────
+function scarica() {{
+  // Resetto lo zoom per catturare tutta la mappa
+  const trasf = fitTransform();
+  gZoom.attr('transform', `translate(${{trasf.x}},${{trasf.y}}) scale(${{trasf.k}})`);
+
+  // Serializzo l'SVG
+  const svgEl   = svg.node();
+  const svgData = new XMLSerializer().serializeToString(svgEl);
+  const svgBlob = new Blob([svgData], {{type:'image/svg+xml;charset=utf-8'}});
+  const url     = URL.createObjectURL(svgBlob);
+
+  // Disegno su canvas e scarico come PNG
+  const img = new Image();
+  img.onload = () => {{
+    const canvas = document.createElement('canvas');
+    canvas.width  = window.innerWidth  * 2;  // 2x per alta risoluzione
+    canvas.height = window.innerHeight * 2;
+    const ctx = canvas.getContext('2d');
+    ctx.scale(2, 2);
+    ctx.fillStyle = temaDark ? '#0d0d1a' : '#f5f7ff';
+    ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
+    ctx.drawImage(img, 0, 0);
+    URL.revokeObjectURL(url);
+
+    const link = document.createElement('a');
+    link.download = 'mappa-readabile.png';
+    link.href     = canvas.toDataURL('image/png');
+    link.click();
+  }};
+  img.src = url;
 }}
 </script>
 </body>
