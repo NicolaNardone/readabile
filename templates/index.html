@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
   <title>ReadAbile</title>
   <link href="https://fonts.googleapis.com/css2?family=Sora:wght@300;400;600;700&family=Space+Mono:wght@400;700&display=swap" rel="stylesheet"/>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/marked/9.1.6/marked.min.js"></script>
   <style>
     @font-face {
       font-family: 'OpenDyslexic';
@@ -444,7 +445,6 @@
       line-height: 1.7;
       color: var(--text);
       display: none;
-      white-space: pre-wrap;
     }
 
     .ai-risposta.visible { display: block; }
@@ -468,6 +468,12 @@
       color: var(--blue);
       border: 1px solid rgba(74,158,255,0.3);
     }
+
+    .ai-risposta strong { color: var(--accent); font-weight: 700; }
+    .ai-risposta em { color: var(--text-muted); font-style: italic; }
+    .ai-risposta ul, .ai-risposta ol { padding-left: 24px; margin: 8px 0; }
+    .ai-risposta li { margin: 4px 0; }
+    .ai-risposta p { margin-bottom: 10px; }
 
     /* ── FOOTER ── */
     footer {
@@ -749,7 +755,7 @@
       if (dati.errore) {
         document.getElementById('aiRisposta').textContent = 'Errore: ' + dati.errore;
       } else {
-        document.getElementById('aiRisposta').textContent = dati.risposta;
+        document.getElementById('aiRisposta').innerHTML = marked.parse(dati.risposta);
       }
 
       document.getElementById('aiRisposta').classList.add('visible');
