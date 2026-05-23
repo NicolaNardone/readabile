@@ -367,29 +367,37 @@ function resetZoom() {{
 }}
 // ── Scarica mappa come PNG ────────────────────────────────
 function scarica() {{
-  // Resetto lo zoom per catturare tutta la mappa
   const trasf = fitTransform();
-  gZoom.attr('transform', `translate(${{trasf.x}},${{trasf.y}}) scale(${{trasf.k}})`);
+  
+  // Calcolo dimensioni reali del contenuto con il fit
+  const margine = 40;
+  const pw = cW * trasf.k + margine * 2;
+  const ph = cH * trasf.k + margine * 2;
+  
+  // Creo un SVG temporaneo delle dimensioni esatte del contenuto
+  const svgClone = svg.node().cloneNode(true);
+  svgClone.setAttribute('width',  pw);
+  svgClone.setAttribute('height', ph);
+  svgClone.setAttribute('viewBox', `${{xMin - margine / trasf.k}} ${{yMin - margine / trasf.k}} ${{cW + margine * 2 / trasf.k}} ${{cH + margine * 2 / trasf.k}}`);
+  
+  // Rimuovo i controlli dal clone
+  svgClone.querySelectorAll('.controls, .hint').forEach(el => el.remove());
 
-  // Serializzo l'SVG
-  const svgEl   = svg.node();
-  const svgData = new XMLSerializer().serializeToString(svgEl);
+  const svgData = new XMLSerializer().serializeToString(svgClone);
   const svgBlob = new Blob([svgData], {{type:'image/svg+xml;charset=utf-8'}});
   const url     = URL.createObjectURL(svgBlob);
 
-  // Disegno su canvas e scarico come PNG
   const img = new Image();
   img.onload = () => {{
     const canvas = document.createElement('canvas');
-    canvas.width  = window.innerWidth  * 2;  // 2x per alta risoluzione
-    canvas.height = window.innerHeight * 2;
+    canvas.width  = pw * 2;
+    canvas.height = ph * 2;
     const ctx = canvas.getContext('2d');
     ctx.scale(2, 2);
     ctx.fillStyle = temaDark ? '#0d0d1a' : '#f5f7ff';
-    ctx.fillRect(0, 0, window.innerWidth, window.innerHeight);
-    ctx.drawImage(img, 0, 0);
+    ctx.fillRect(0, 0, pw, ph);
+    ctx.drawImage(img, 0, 0, pw, ph);
     URL.revokeObjectURL(url);
-
     const link = document.createElement('a');
     link.download = 'mappa-readabile.png';
     link.href     = canvas.toDataURL('image/png');
