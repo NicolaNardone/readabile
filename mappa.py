@@ -367,41 +367,42 @@ function resetZoom() {{
 }}
 // ── Scarica mappa come PNG ────────────────────────────────
 function scarica() {{
-  const margine = 60;
+  const pad = 50;
   
-  // Clone SVG con viewBox esatto sul contenuto
-  const svgClone = svg.node().cloneNode(true);
-  const vx = xMin - margine;
-  const vy = yMin - margine;
-  const vw = cW + margine * 2;
-  const vh = cH + margine * 2;
-  
-  svgClone.setAttribute('width',   vw);
-  svgClone.setAttribute('height',  vh);
-  svgClone.setAttribute('viewBox', `${{vx}} ${{vy}} ${{vw}} ${{vh}}`);
-  svgClone.removeAttribute('style');
-  
-  // Rimuovo il gruppo zoom e prendo solo il contenuto
-  const gZoomClone = svgClone.querySelector('g');
-  if (gZoomClone) gZoomClone.removeAttribute('transform');
+  // ViewBox esatto sul contenuto reale (coordinate dei nodi)
+  const vx = xMin - pad;
+  const vy = yMin - pad;
+  const vw = cW + pad * 2;
+  const vh = cH + pad * 2;
 
-  // Aggiungo sfondo
-  const rect = document.createElementNS('http://www.w3.org/2000/svg','rect');
-  rect.setAttribute('x', vx);
-  rect.setAttribute('y', vy);
-  rect.setAttribute('width',  vw);
-  rect.setAttribute('height', vh);
-  rect.setAttribute('fill', temaDark ? '#0d0d1a' : '#f5f7ff');
-  svgClone.insertBefore(rect, svgClone.firstChild);
+  // Creo SVG pulito da zero
+  const ns = 'http://www.w3.org/2000/svg';
+  const out = document.createElementNS(ns, 'svg');
+  out.setAttribute('xmlns', ns);
+  out.setAttribute('width',   vw);
+  out.setAttribute('height',  vh);
+  out.setAttribute('viewBox', `${{vx}} ${{vy}} ${{vw}} ${{vh}}`);
 
-  // Scarico come SVG
-  const svgData = new XMLSerializer().serializeToString(svgClone);
-  const blob    = new Blob([svgData], {{type:'image/svg+xml;charset=utf-8'}});
-  const url     = URL.createObjectURL(blob);
-  const link    = document.createElement('a');
-  link.download = 'mappa-readabile.svg';
-  link.href     = url;
-  link.click();
+  // Sfondo
+  const bg = document.createElementNS(ns, 'rect');
+  bg.setAttribute('x', vx); bg.setAttribute('y', vy);
+  bg.setAttribute('width', vw); bg.setAttribute('height', vh);
+  bg.setAttribute('fill', temaDark ? '#0d0d1a' : '#f5f7ff');
+  out.appendChild(bg);
+
+  // Copio links e nodi dal gZoom (già nelle coordinate corrette)
+  const gClone = gZoom.node().cloneNode(true);
+  gClone.removeAttribute('transform');
+  out.appendChild(gClone);
+
+  // Scarico
+  const data = new XMLSerializer().serializeToString(out);
+  const blob = new Blob([data], {{type:'image/svg+xml;charset=utf-8'}});
+  const url  = URL.createObjectURL(blob);
+  const a    = document.createElement('a');
+  a.download = 'mappa-readabile.svg';
+  a.href = url;
+  a.click();
   URL.revokeObjectURL(url);
 }}
 </script>
