@@ -212,8 +212,8 @@ let temaDark = true;
 // ── Stima dimensioni nodo ──────────────────────────────────
 function nodeSize(name, lv) {{
   const cfg  = LV[Math.min(lv, 2)];
-  const maxW = 180;
-  const estW = name.length * cfg.fs * 0.54;
+  const maxW = lv === 2 ? 999 : 180;  // foglie: nessun limite larghezza
+  const estW = name.length * cfg.fs * 0.58;
   const lines = Math.max(1, Math.ceil(estW / maxW));
   const w = Math.min(estW, maxW) + cfg.px * 2;
   const h = lines * (cfg.fs + 5) + cfg.py * 2;
@@ -259,7 +259,7 @@ root.each(d => {{
 // Layout tree con nodeSize adattivo
 // Calcola quante foglie ci sono per stimare la larghezza necessaria
 const nFoglie = root.leaves().length;
-const largMin = nFoglie * 200;
+const largMin = nFoglie * 220;
 const altMin  = (root.height + 1) * LEVEL_GAP;
 
 const tree = d3.tree()
