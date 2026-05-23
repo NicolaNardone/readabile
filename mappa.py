@@ -1,6 +1,6 @@
 # ============================================================
 # ReadAbile - Modulo Mappa Visiva (versione D3.js)
-# Layout gerarchico top-down usando d3.tree() ufficiale
+# Layout gerarchico top-down come Algor Maps
 # ============================================================
 
 import os
@@ -15,33 +15,45 @@ client = Groq(api_key=GROQ_API_KEY)
 
 
 def estrai_struttura_mappa(testo):
-    prompt = f"""Analizza questo testo e crea una mappa concettuale gerarchica.
-Rispondi SOLO con un JSON valido, senza spiegazioni, senza markdown, senza backtick.
-Crea massimo 4 rami principali e massimo 3 sotto-concetti per ramo.
-I testi dei nodi devono essere BREVI: massimo 4 parole per nodo.
+    prompt = f"""Sei un esperto di didattica scolastica. Analizza il testo e crea una mappa concettuale gerarchica come Algor Education.
 
-Il JSON deve avere questa struttura:
+REGOLE OBBLIGATORIE:
+- Rispondi SOLO con JSON valido, zero testo aggiuntivo
+- Il concetto centrale deve essere il titolo del testo (2-4 parole)
+- Crea 3-5 macro-argomenti principali (es: "Struttura", "Cause", "Effetti", "Tipi")
+- Per ogni macro-argomento crea 2-4 sotto-argomenti specifici e informativi
+- I nodi devono essere concisi ma informativi: 2-6 parole
+- Usa termini precisi presi dal testo originale
+- I sotto-argomenti devono essere fatti e informazioni concrete, non categorie generiche
+
+JSON richiesto:
 {{
-  "concetto_centrale": "tema principale",
+  "concetto_centrale": "Titolo argomento",
   "rami": [
     {{
-      "concetto": "argomento 1",
-      "sotto_concetti": ["dettaglio 1", "dettaglio 2"]
+      "concetto": "Macro-argomento 1",
+      "sotto_concetti": ["fatto specifico 1", "fatto specifico 2", "fatto specifico 3"]
     }}
   ]
 }}
 
-Testo da analizzare:
+Testo:
 {testo}"""
 
     risposta = client.chat.completions.create(
         model="llama-3.3-70b-versatile",
         messages=[
-            {"role": "system", "content": "Sei un esperto di mappe concettuali. Rispondi sempre e solo con JSON valido. Testi brevi: max 4 parole per nodo."},
-            {"role": "user", "content": prompt}
+            {
+                "role": "system",
+                "content": "Sei un esperto di didattica che crea mappe concettuali per studenti delle scuole superiori italiane. Rispondi SEMPRE e SOLO con JSON valido. Mappe complete con 3-5 rami e 2-4 sotto-concetti informativi e specifici per ramo."
+            },
+            {
+                "role": "user",
+                "content": prompt
+            }
         ],
         temperature=0.3,
-        max_tokens=800
+        max_tokens=1000
     )
 
     testo_risposta = risposta.choices[0].message.content.strip()
@@ -54,7 +66,6 @@ def genera_mappa(testo, percorso_output="static/mappa.html"):
     struttura = estrai_struttura_mappa(testo)
     print(f"Struttura generata: {struttura['concetto_centrale']}")
 
-    # Struttura ad albero per D3
     albero = {
         "name": struttura["concetto_centrale"],
         "level": 0,
@@ -87,7 +98,6 @@ def genera_mappa(testo, percorso_output="static/mappa.html"):
   html, body {{ width:100%; height:100%; overflow:hidden; }}
   body {{ background:#0d0d1a; font-family:'OpenDyslexic','Segoe UI',sans-serif; transition:background 0.3s; }}
   body.light {{ background:#f0f4ff; }}
-
   svg {{ position:absolute; top:0; left:0; }}
 
   .link {{
@@ -105,8 +115,9 @@ def genera_mappa(testo, percorso_output="static/mappa.html"):
     filter: drop-shadow(0 3px 8px rgba(0,0,0,0.4));
   }}
   .node rect:active {{ cursor: grabbing; }}
-  .node:hover rect {{ filter: drop-shadow(0 5px 16px rgba(255,255,255,0.2)) brightness(1.1); }}
-
+  .node:hover rect {{
+    filter: drop-shadow(0 5px 16px rgba(255,255,255,0.2)) brightness(1.1);
+  }}
   .node text {{
     font-family: 'OpenDyslexic','Segoe UI',sans-serif;
     pointer-events: none;
@@ -122,7 +133,6 @@ def genera_mappa(testo, percorso_output="static/mappa.html"):
     display: flex;
     gap: 8px;
   }}
-
   .ctrl-btn {{
     background: rgba(255,255,255,0.1);
     backdrop-filter: blur(8px);
@@ -156,8 +166,7 @@ def genera_mappa(testo, percorso_output="static/mappa.html"):
     gap: 6px;
   }}
   body.light .legenda {{ background:rgba(255,255,255,0.9); box-shadow:0 2px 12px rgba(0,0,0,0.1); }}
-  .leg {{ display:flex; align-items:center; gap:8px; font-size:11px; }}
-  body.dark .leg, .leg {{ color:#ccc; }}
+  .leg {{ display:flex; align-items:center; gap:8px; font-size:11px; color:#ccc; }}
   body.light .leg {{ color:#444; }}
   .leg-sq {{ width:14px; height:14px; border-radius:4px; flex-shrink:0; }}
 
@@ -195,7 +204,6 @@ def genera_mappa(testo, percorso_output="static/mappa.html"):
 <script>
 const DATA = {dati_json};
 
-// Colori nodi per livello
 const COLORS = {{
   dark: [
     {{ fill:'#1a5276', stroke:'#4a9eff', text:'#d6eaf8' }},
@@ -209,7 +217,6 @@ const COLORS = {{
   ]
 }};
 
-// Padding nodi
 const PAD = [
   {{ x:24, y:14, fs:14 }},
   {{ x:20, y:12, fs:12 }},
@@ -219,84 +226,79 @@ const PAD = [
 const W = window.innerWidth;
 const H = window.innerHeight;
 
-const svg = d3.select("body").append("svg")
-  .attr("width", W)
-  .attr("height", H);
-
-// Zoom/pan sul gruppo principale
+const svg = d3.select("body").append("svg").attr("width", W).attr("height", H);
 const gZoom = svg.append("g");
-const zoom = d3.zoom().scaleExtent([0.15, 4]).on("zoom", e => gZoom.attr("transform", e.transform));
+const zoom = d3.zoom().scaleExtent([0.1, 4]).on("zoom", e => gZoom.attr("transform", e.transform));
 svg.call(zoom);
 
-// Gerarchia e layout
 const root = d3.hierarchy(DATA);
 
-// Calcolo dimensioni nodi PRIMA del layout
-function nodeSize(d) {{
+// Calcola dimensioni nodi
+root.each(d => {{
   const lv = Math.min(d.data.level, 2);
   const p  = PAD[lv];
   const fs = p.fs;
-  // Stima larghezza testo
-  const words = d.data.name.split(" ");
-  const maxW  = Math.max(...words.map(w => w.length)) * fs * 0.62;
-  const lineW = d.data.name.length * fs * 0.52;
-  const w     = Math.min(lineW, 180) + p.x * 2;
-  const lines = Math.ceil(d.data.name.length / 14);
-  const h     = lines * (fs + 4) + p.y * 2;
-  return {{ w: Math.max(w, 80), h: Math.max(h, fs + p.y * 2) }};
-}}
+  const name = d.data.name;
+  const maxW = 200;
+  const estW = name.length * fs * 0.52;
+  const w    = Math.min(estW, maxW) + p.x * 2;
+  const lines = Math.ceil(estW / maxW) || 1;
+  const h    = lines * (fs + 4) + p.y * 2;
+  d.nw = Math.max(w, 80);
+  d.nh = Math.max(h, fs + p.y * 2);
+}});
 
-root.each(d => {{ const s = nodeSize(d); d.nw = s.w; d.nh = s.h; }});
-
-// Layout tidy tree con nodeSize
+// Layout tree con separazione basata su larghezza nodi
 const treeLayout = d3.tree()
-  .nodeSize([0, 120])  // altezza livello 120px
+  .nodeSize([1, 140])
   .separation((a, b) => {{
-    const aw = a.nw / 2 + 20;
-    const bw = b.nw / 2 + 20;
-    return (aw + bw) / (a.parent === b.parent ? 80 : 100);
+    const gap = (a.nw / 2 + b.nw / 2 + 30);
+    return a.parent === b.parent ? gap / 60 : gap / 50;
   }});
 
 treeLayout(root);
 
-// Normalizzo X: D3 tree usa x per orizzontale, y per profondità
-// Converto: voglio top-down quindi scambio x↔y
+// Converti coordinate: d3.tree usa x orizzontale, y profondità
+// Vogliamo top-down: profondità → y, posizione fratelli → x
 root.each(d => {{
-  const tmp = d.x;
-  d.tx = d.y;  // profondità → verticale
-  d.ty = tmp;  // posizione fratelli → orizzontale
+  d.tx = d.y;   // profondità → verticale
+  d.ty = d.x;   // posizione → orizzontale (scalata)
 }});
 
-// Calcolo bounding box
-const xs = root.descendants().map(d => d.ty);
-const ys = root.descendants().map(d => d.tx);
-const minX = Math.min(...xs) - 200;
-const maxX = Math.max(...xs) + 200;
-const minY = Math.min(...ys) - 80;
-const maxY = Math.max(...ys) + 80;
-const totalW = maxX - minX;
-const totalH = maxY - minY;
+// Scala le posizioni orizzontali
+const allDesc = root.descendants();
+const tyMin = d3.min(allDesc, d => d.ty);
+const tyMax = d3.max(allDesc, d => d.ty);
+const txMax = d3.max(allDesc, d => d.tx);
 
-// Offset per centrare
-const offX = -minX;
-const offY = -minY + 40;
+// Normalizza e aggiunge margine
+const MARGIN = 80;
+const scaleY = 1;
+allDesc.forEach(d => {{
+  d.tx = d.tx * scaleY + MARGIN;
+  d.ty = d.ty + MARGIN + (tyMax - tyMin) / 2 * 0 ;
+}});
+
+const totalW = (tyMax - tyMin) + MARGIN * 4 + d3.max(allDesc, d => d.nw);
+const totalH = txMax + MARGIN * 2 + d3.max(allDesc, d => d.nh);
 
 // Fit iniziale
-const scaleInit = Math.min(W / (totalW + 80), H / (totalH + 80), 1) * 0.9;
-const tx0 = (W - totalW * scaleInit) / 2 - minX * scaleInit;
-const ty0 = (H - totalH * scaleInit) / 2 - minY * scaleInit + 20;
+const scaleInit = Math.min(W / totalW, H / totalH) * 0.88;
+const tx0 = (W - totalW * scaleInit) / 2;
+const ty0 = (H - totalH * scaleInit) / 2;
 svg.call(zoom.transform, d3.zoomIdentity.translate(tx0, ty0).scale(scaleInit));
 
 let temaDark = true;
 
-// Linee di connessione (bezier verticale)
+// Percorso connessione a L
 function linkPath(s, t) {{
-  const sx = s.ty + offX, sy = s.tx + s.nh/2 + offY;
-  const tx = t.ty + offX, ty = t.tx - t.nh/2 + offY;
-  const midY = (sy + ty) / 2;
-  return `M${{sx}},${{sy}} C${{sx}},${{midY}} ${{tx}},${{midY}} ${{tx}},${{ty}}`;
+  const sx = s.ty, sy = s.tx + s.nh;
+  const tx = t.ty, ty2 = t.tx;
+  const midY = (sy + ty2) / 2;
+  return `M${{sx}},${{sy}} C${{sx}},${{midY}} ${{tx}},${{midY}} ${{tx}},${{ty2}}`;
 }}
 
+// Links
 const gLinks = gZoom.append("g");
 const linkEls = gLinks.selectAll("path")
   .data(root.links())
@@ -307,15 +309,15 @@ const linkEls = gLinks.selectAll("path")
 // Nodi
 const gNodes = gZoom.append("g");
 const nodeEls = gNodes.selectAll("g")
-  .data(root.descendants())
+  .data(allDesc)
   .join("g")
   .attr("class", "node")
-  .attr("transform", d => `translate(${{d.ty + offX - d.nw/2}},${{d.tx - d.nh/2 + offY}})`)
+  .attr("transform", d => `translate(${{d.ty - d.nw/2}},${{d.tx}})`)
   .call(d3.drag()
     .on("drag", function(e, d) {{
       d.ty += e.dx;
       d.tx += e.dy;
-      d3.select(this).attr("transform", `translate(${{d.ty + offX - d.nw/2}},${{d.tx - d.nh/2 + offY}})`);
+      d3.select(this).attr("transform", `translate(${{d.ty - d.nw/2}},${{d.tx}})`);
       linkEls.attr("d", dd => linkPath(dd.source, dd.target));
     }})
   );
@@ -324,6 +326,7 @@ const nodeEls = gNodes.selectAll("g")
 nodeEls.append("rect")
   .attr("width",  d => d.nw)
   .attr("height", d => d.nh)
+  .attr("rx", 10).attr("ry", 10)
   .attr("fill",   d => COLORS.dark[Math.min(d.data.level,2)].fill)
   .attr("stroke", d => COLORS.dark[Math.min(d.data.level,2)].stroke);
 
@@ -332,18 +335,14 @@ nodeEls.each(function(d) {{
   const lv   = Math.min(d.data.level, 2);
   const fs   = PAD[lv].fs;
   const name = d.data.name;
-  const maxCharsPerLine = Math.floor((d.nw - PAD[lv].x * 2) / (fs * 0.55));
+  const maxChars = Math.floor((d.nw - PAD[lv].x * 2) / (fs * 0.55));
   const words = name.split(" ");
   const lines = [];
   let line = "";
   words.forEach(w => {{
     const test = line ? line + " " + w : w;
-    if (test.length > maxCharsPerLine && line) {{
-      lines.push(line);
-      line = w;
-    }} else {{
-      line = test;
-    }}
+    if (test.length > maxChars && line) {{ lines.push(line); line = w; }}
+    else {{ line = test; }}
   }});
   if (line) lines.push(line);
 
@@ -353,7 +352,6 @@ nodeEls.each(function(d) {{
 
   const totalH2 = lines.length * (fs + 4);
   const startY  = (d.nh - totalH2) / 2 + fs / 2 + 2;
-
   lines.forEach((l, i) => {{
     el.append("tspan")
       .attr("x", d.nw / 2)
@@ -362,24 +360,20 @@ nodeEls.each(function(d) {{
   }});
 }});
 
-// Toggle tema
 function toggleTema() {{
   temaDark = !temaDark;
   document.body.className = temaDark ? "dark" : "light";
   document.getElementById("themeIcon").textContent  = temaDark ? "☀️" : "🌙";
   document.getElementById("themeLabel").textContent = temaDark ? "Tema chiaro" : "Tema scuro";
-
   const tema = temaDark ? "dark" : "light";
   nodeEls.selectAll("rect")
     .attr("fill",   d => COLORS[tema][Math.min(d.data.level,2)].fill)
     .attr("stroke", d => COLORS[tema][Math.min(d.data.level,2)].stroke);
   nodeEls.selectAll("text")
     .attr("fill",   d => COLORS[tema][Math.min(d.data.level,2)].text);
-  gLinks.selectAll(".link")
-    .attr("stroke", temaDark ? "#4a9eff" : "#1a6bab");
+  gLinks.selectAll(".link").attr("stroke", temaDark ? "#4a9eff" : "#1a6bab");
 }}
 
-// Reset zoom
 function resetZoom() {{
   svg.transition().duration(500)
     .call(zoom.transform, d3.zoomIdentity.translate(tx0, ty0).scale(scaleInit));
