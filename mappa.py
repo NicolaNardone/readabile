@@ -1,8 +1,8 @@
 # ============================================================
 # ReadAbile - Modulo Mappa Visiva (versione D3.js Algor-style)
-# - Colori per ramo (ogni ramo ha la sua palette)
+# - Misura testo con Canvas API (precisione assoluta)
+# - Colori per ramo
 # - Auto-fit reale allo schermo
-# - Layout compatto e ordinato
 # ============================================================
 
 import os
@@ -68,7 +68,6 @@ def genera_mappa(testo, percorso_output="static/mappa.html"):
     struttura = estrai_struttura_mappa(testo)
     print(f"Struttura generata: {struttura['concetto_centrale']}")
 
-    # Palette colori per ramo (come Algor) — scuro/chiaro/testo
     palette = [
         {"dark": "#1a4f8a", "mid": "#2471a3", "light": "#aed6f1", "stroke": "#4a9eff"},
         {"dark": "#512e5f", "mid": "#7d3c98", "light": "#d7bde2", "stroke": "#a569bd"},
@@ -77,7 +76,6 @@ def genera_mappa(testo, percorso_output="static/mappa.html"):
         {"dark": "#6e2c00", "mid": "#a04000", "light": "#f5cba7", "stroke": "#e67e22"},
     ]
 
-    # Costruisco struttura con indice colore per ramo
     albero = {
         "name": struttura["concetto_centrale"],
         "level": 0,
@@ -124,13 +122,13 @@ def genera_mappa(testo, percorso_output="static/mappa.html"):
     stroke-width: 2px;
     stroke-opacity: 0.7;
   }}
-
   .node rect {{
     stroke-width: 2px;
     cursor: grab;
+    transition: filter 0.15s;
   }}
   .node rect:active {{ cursor: grabbing; }}
-  .node:hover rect {{ filter: brightness(1.15); }}
+  .node:hover rect {{ filter: brightness(1.2); }}
   .node text {{
     font-family: 'OpenDyslexic','Segoe UI',sans-serif;
     pointer-events: none;
@@ -197,27 +195,32 @@ def genera_mappa(testo, percorso_output="static/mappa.html"):
 const DATA    = {dati_json};
 const PALETTE = {palette_json};
 
-// Font sizes e padding per livello
+// Padding e font size per livello
 const LV = [
-  {{ fs: 15, px: 26, py: 14 }},  // livello 0: centrale
-  {{ fs: 13, px: 20, py: 12 }},  // livello 1: rami
-  {{ fs: 11, px: 16, py: 10 }},  // livello 2: foglie
+  {{ fs: 15, px: 28, py: 14 }},
+  {{ fs: 13, px: 22, py: 12 }},
+  {{ fs: 11, px: 18, py: 10 }},
 ];
 
-const LEVEL_GAP = 120;  // spazio verticale tra livelli
-const NODE_GAP  = 20;   // spazio minimo orizzontale tra nodi
-
+const LEVEL_GAP = 130;
 let temaDark = true;
 
-// ── Stima dimensioni nodo ──────────────────────────────────
-function nodeSize(name, lv) {{
-  const cfg  = LV[Math.min(lv, 2)];
-  const maxW = lv === 2 ? 999 : 180;  // foglie: nessun limite larghezza
-  const estW = name.length * cfg.fs * 0.72;
-  const lines = Math.max(1, Math.ceil(estW / maxW));
-  const w = Math.min(estW, maxW) + cfg.px * 2;
-  const h = lines * (cfg.fs + 5) + cfg.py * 2;
-  return {{ w: Math.max(w, 70), h: Math.max(h, cfg.fs + cfg.py * 2) }};
+// ── Misura testo con Canvas API (precisione assoluta) ─────
+const _canvas = document.createElement('canvas');
+const _ctx    = _canvas.getContext('2d');
+
+function misuraTesto(text, fs) {{
+  _ctx.font = `600 ${{fs}}px OpenDyslexic, Segoe UI, sans-serif`;
+  return _ctx.measureText(text).width;
+}}
+
+// ── Calcola dimensione nodo basata sul testo reale ────────
+function calcolaDim(name, lv) {{
+  const cfg = LV[Math.min(lv, 2)];
+  const tw  = misuraTesto(name, cfg.fs);
+  const w   = tw + cfg.px * 2;
+  const h   = cfg.fs + cfg.py * 2;
+  return {{ w: Math.max(w, 80), h: Math.max(h, 36) }};
 }}
 
 // ── Colore nodo ───────────────────────────────────────────
@@ -227,83 +230,71 @@ function nodeColor(d, tema) {{
       ? {{ fill:'#0f2d4a', stroke:'#4a9eff', text:'#d6eaf8' }}
       : {{ fill:'#2980b9', stroke:'#1a5276', text:'white'   }};
   }}
-  const p = PALETTE[d.data.colorIdx] || PALETTE[0];
+  const p  = PALETTE[d.data.colorIdx] || PALETTE[0];
   const lv = d.data.level;
   return tema === 'dark'
-    ? {{ fill: lv===1 ? p.dark : p.mid,   stroke: p.stroke, text: '#ffffff' }}
-    : {{ fill: lv===1 ? p.mid  : p.light, stroke: p.dark,   text: lv===2 ? '#222' : '#fff' }};
+    ? {{ fill: lv===1 ? p.dark : p.mid,   stroke: p.stroke, text:'#ffffff' }}
+    : {{ fill: lv===1 ? p.mid  : p.light, stroke: p.dark,   text: lv===2 ? '#222':'#fff' }};
 }}
 
-// ── Setup SVG ─────────────────────────────────────────────
+// ── SVG e zoom ────────────────────────────────────────────
 const svg   = d3.select('body').append('svg').style('position','absolute');
 const gZoom = svg.append('g');
-const zoom  = d3.zoom().scaleExtent([0.08, 5]).on('zoom', e => gZoom.attr('transform', e.transform));
+const zoom  = d3.zoom().scaleExtent([0.05, 5]).on('zoom', e => gZoom.attr('transform', e.transform));
 svg.call(zoom);
 
-function resize() {{
-  svg.attr('width', window.innerWidth).attr('height', window.innerHeight);
-}}
+function resize() {{ svg.attr('width', window.innerWidth).attr('height', window.innerHeight); }}
 resize();
-window.addEventListener('resize', resize);
+window.addEventListener('resize', () => {{ resize(); }});
 
-// ── Gerarchia e layout ────────────────────────────────────
+// ── Gerarchia ─────────────────────────────────────────────
 const root = d3.hierarchy(DATA);
 
-// Calcola dimensioni di ogni nodo
+// Precalcolo dimensioni nodi
 root.each(d => {{
-  const s = nodeSize(d.data.name, d.data.level);
-  d.nw = s.w;
-  d.nh = s.h;
+  const dim = calcolaDim(d.data.name, d.data.level);
+  d.nw = dim.w;
+  d.nh = dim.h;
 }});
 
-// Layout tree con nodeSize adattivo
-// Calcola quante foglie ci sono per stimare la larghezza necessaria
+// ── Layout D3 tree con size adattivo ─────────────────────
+// size([width, height]) distribuisce i nodi nello spazio in modo
+// che non si sovrappongano mai — D3 gestisce tutto automaticamente
 const nFoglie = root.leaves().length;
-const largMin = nFoglie * 220;
-const altMin  = (root.height + 1) * LEVEL_GAP;
+const treeW   = Math.max(nFoglie * 240, window.innerWidth  * 0.9);
+const treeH   = Math.max((root.height + 1) * LEVEL_GAP, window.innerHeight * 0.75);
 
-const tree = d3.tree()
-  .size([
-    Math.max(largMin, window.innerWidth  * 0.85),
-    Math.max(altMin,  window.innerHeight * 0.75)
-  ]);
-
+const tree = d3.tree().size([treeW, treeH]);
 tree(root);
 
-// Converti coordinate D3 (x=orizzontale, y=profondità) in top-down
-// D3 tree: x → posizione fratelli, y → profondità
+// D3 tree: d.x = posizione orizzontale, d.y = profondità
 root.each(d => {{
-  d.px = d.x;   // posizione orizzontale
-  d.py = d.y;   // profondità verticale
+  d.px = d.x;
+  d.py = d.y;
 }});
 
-// ── Calcola bounding box e auto-fit ──────────────────────
+// ── Bounding box e auto-fit ───────────────────────────────
 const nodes = root.descendants();
-const xMin  = d3.min(nodes, d => d.px - d.nw/2);
-const xMax  = d3.max(nodes, d => d.px + d.nw/2);
+const xMin  = d3.min(nodes, d => d.px - d.nw / 2);
+const xMax  = d3.max(nodes, d => d.px + d.nw / 2);
 const yMin  = d3.min(nodes, d => d.py);
 const yMax  = d3.max(nodes, d => d.py + d.nh);
-
-const contentW = xMax - xMin;
-const contentH = yMax - yMin;
-const MARGIN   = 40;
+const cW    = xMax - xMin;
+const cH    = yMax - yMin;
+const PAD   = 48;
 
 function fitTransform() {{
-  const W = window.innerWidth;
-  const H = window.innerHeight;
-  const sc = Math.min(
-    (W - MARGIN * 2) / contentW,
-    (H - MARGIN * 2) / contentH,
-    1.2  // non ingrandire oltre il 120%
-  );
-  const tx = (W - contentW * sc) / 2 - xMin * sc;
-  const ty = (H - contentH * sc) / 2 - yMin * sc + 20;
+  const W  = window.innerWidth;
+  const H  = window.innerHeight;
+  const sc = Math.min((W - PAD * 2) / cW, (H - PAD * 2) / cH, 1.1);
+  const tx = W / 2 - (xMin + cW / 2) * sc;
+  const ty = PAD - yMin * sc;
   return d3.zoomIdentity.translate(tx, ty).scale(sc);
 }}
 
 svg.call(zoom.transform, fitTransform());
 
-// ── Disegno links ─────────────────────────────────────────
+// ── Links ─────────────────────────────────────────────────
 function linkPath(s, t) {{
   const sx = s.px, sy = s.py + s.nh;
   const tx = t.px, ty = t.py;
@@ -311,22 +302,19 @@ function linkPath(s, t) {{
   return `M${{sx}},${{sy}} C${{sx}},${{my}} ${{tx}},${{my}} ${{tx}},${{ty}}`;
 }}
 
-const linkColor = d => {{
-  const ci = d.target.data.colorIdx;
-  const p  = ci >= 0 ? PALETTE[ci] : null;
-  return p ? p.stroke : '#4a9eff';
-}};
-
-const gLinks = gZoom.append('g');
+const gLinks  = gZoom.append('g');
 const linkEls = gLinks.selectAll('path')
   .data(root.links())
   .join('path')
   .attr('class', 'link')
-  .attr('stroke', linkColor)
+  .attr('stroke', d => {{
+    const ci = d.target.data.colorIdx;
+    return ci >= 0 ? PALETTE[ci].stroke : '#4a9eff';
+  }})
   .attr('d', d => linkPath(d.source, d.target));
 
-// ── Disegno nodi ─────────────────────────────────────────
-const gNodes = gZoom.append('g');
+// ── Nodi ─────────────────────────────────────────────────
+const gNodes  = gZoom.append('g');
 const nodeEls = gNodes.selectAll('g')
   .data(nodes)
   .join('g')
@@ -349,45 +337,22 @@ nodeEls.append('rect')
   .attr('fill',   d => nodeColor(d, 'dark').fill)
   .attr('stroke', d => nodeColor(d, 'dark').stroke);
 
-// Testo con wrapping
-nodeEls.each(function(d) {{
-  const lv   = Math.min(d.data.level, 2);
-  const cfg  = LV[lv];
-  const name = d.data.name;
-  const maxChars = Math.floor((d.nw - cfg.px * 2) / (cfg.fs * 0.54));
-  const words = name.split(' ');
-  const lines = [];
-  let line = '';
-  words.forEach(w => {{
-    const test = line ? line + ' ' + w : w;
-    if (test.length > maxChars && line) {{ lines.push(line); line = w; }}
-    else {{ line = test; }}
-  }});
-  if (line) lines.push(line);
-
-  const el     = d3.select(this).append('text')
-    .attr('fill', nodeColor(d, 'dark').text)
-    .attr('font-size', cfg.fs + 'px')
-    .attr('font-weight', lv === 0 ? '700' : '600');
-
-  const totH  = lines.length * (cfg.fs + 5);
-  const baseY = (d.nh - totH) / 2 + cfg.fs / 2 + 2;
-  lines.forEach((l, i) => {{
-    el.append('tspan')
-      .attr('x', d.nw / 2)
-      .attr('y', baseY + i * (cfg.fs + 5))
-      .text(l);
-  }});
-}});
+// Testo centrato (una sola riga — la larghezza è calcolata sul testo)
+nodeEls.append('text')
+  .attr('x', d => d.nw / 2)
+  .attr('y', d => d.nh / 2)
+  .attr('fill',        d => nodeColor(d, 'dark').text)
+  .attr('font-size',   d => LV[Math.min(d.data.level,2)].fs + 'px')
+  .attr('font-weight', d => d.data.level === 0 ? '700' : '600')
+  .text(d => d.data.name);
 
 // ── Toggle tema ───────────────────────────────────────────
 function toggleTema() {{
   temaDark = !temaDark;
   const tema = temaDark ? 'dark' : 'light';
-  document.body.className = temaDark ? 'dark' : 'light';
+  document.body.className = tema;
   document.getElementById('themeIcon').textContent  = temaDark ? '☀️' : '🌙';
   document.getElementById('themeLabel').textContent = temaDark ? 'Tema chiaro' : 'Tema scuro';
-
   nodeEls.selectAll('rect')
     .attr('fill',   d => nodeColor(d, tema).fill)
     .attr('stroke', d => nodeColor(d, tema).stroke);
@@ -395,7 +360,7 @@ function toggleTema() {{
     .attr('fill',   d => nodeColor(d, tema).text);
 }}
 
-// ── Reset zoom ────────────────────────────────────────────
+// ── Fit schermo ───────────────────────────────────────────
 function resetZoom() {{
   svg.transition().duration(500).call(zoom.transform, fitTransform());
 }}
