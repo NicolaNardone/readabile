@@ -213,7 +213,7 @@ let temaDark = true;
 function nodeSize(name, lv) {{
   const cfg  = LV[Math.min(lv, 2)];
   const maxW = lv === 2 ? 999 : 180;  // foglie: nessun limite larghezza
-  const estW = name.length * cfg.fs * 0.58;
+  const estW = name.length * cfg.fs * 0.72;
   const lines = Math.max(1, Math.ceil(estW / maxW));
   const w = Math.min(estW, maxW) + cfg.px * 2;
   const h = lines * (cfg.fs + 5) + cfg.py * 2;
